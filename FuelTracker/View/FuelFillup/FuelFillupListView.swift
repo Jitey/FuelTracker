@@ -53,6 +53,7 @@ struct FillupSectionView: View {
     let month: Date
     let fillups: [FuelFillup]
     @Environment(\.modelContext) private var context
+    @State private var fillupToEdit: FuelFillup? = nil
 
     private var stats: FillupMonthStats { FillupMonthStats(fillups: fillups) }
 
@@ -67,6 +68,14 @@ struct FillupSectionView: View {
                 .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))
                 .listRowBackground(Color.clear)
                 .listRowSeparator(.hidden)
+                .swipeActions(edge: .leading, allowsFullSwipe: false) {
+                    Button {
+                        fillupToEdit = fillup
+                    } label: {
+                        Label("Modifier", systemImage: "pencil")
+                    }
+                    .tint(.orange)
+                }
                 .swipeActions(edge: .trailing, allowsFullSwipe: true) {
                     Button(role: .destructive) {
                         context.delete(fillup)
@@ -87,6 +96,9 @@ struct FillupSectionView: View {
             .textCase(nil)
             .padding(.leading, 16)
             .padding(.vertical, 4)
+        }
+        .sheet(item: $fillupToEdit) { fillup in
+            EditFuelFillupView(fillup: fillup)
         }
     }
 }

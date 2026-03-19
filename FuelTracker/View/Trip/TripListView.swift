@@ -56,6 +56,7 @@ struct MonthSectionView: View {
     let month: Date
     let trips: [Trip]
     @Environment(\.modelContext) private var context
+    @State private var tripToEdit: Trip? = nil
 
     private var stats: MonthStats { MonthStats(trips: trips) }
 
@@ -70,6 +71,14 @@ struct MonthSectionView: View {
                 .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))
                 .listRowBackground(Color.clear)
                 .listRowSeparator(.hidden)
+                .swipeActions(edge: .leading, allowsFullSwipe: false) {
+                    Button {
+                        tripToEdit = trip
+                    } label: {
+                        Label("Modifier", systemImage: "pencil")
+                    }
+                    .tint(.orange)
+                }
                 .swipeActions(edge: .trailing, allowsFullSwipe: true) {
                     Button(role: .destructive) {
                         context.delete(trip)
@@ -90,6 +99,9 @@ struct MonthSectionView: View {
             .textCase(nil)
             .padding(.leading, 16)
             .padding(.vertical, 4)
+        }
+        .sheet(item: $tripToEdit) { trip in
+            EditTripView(trip: trip)
         }
     }
 }

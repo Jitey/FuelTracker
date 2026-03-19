@@ -6,6 +6,7 @@ struct TripDetailView: View {
     @Environment(\.modelContext) private var context
     @Environment(\.dismiss) private var dismiss
     @State private var showDeleteAlert = false
+    @State private var showEdit = false
 
     var body: some View {
         ScrollView {
@@ -44,12 +45,12 @@ struct TripDetailView: View {
                             value: trip.volumeL.formatted(.number.precision(.fractionLength(2))) + " L")
                     InfoRow(label: "Prix au litre",
                             value: trip.fuelPricePerL.formatted(.currency(code: "EUR")))
+                    InfoRow(label: "Coût carburant",
+                            value: (trip.volumeL * trip.fuelPricePerL).formatted(.currency(code: "EUR")))
                 }
 
                 // Coûts
                 InfoSection(title: "Coûts") {
-                    InfoRow(label: "Coût carburant",
-                            value: (trip.volumeL * trip.fuelPricePerL).formatted(.currency(code: "EUR")))
                     if let toll = trip.tollCost, toll > 0 {
                         InfoRow(label: "Péage",
                                 value: toll.formatted(.currency(code: "EUR")))
@@ -70,7 +71,16 @@ struct TripDetailView: View {
                     }
                 }
 
-                // Supprimer
+                // Actions
+                Button {
+                    showEdit = true
+                } label: {
+                    Label("Modifier ce trajet", systemImage: "pencil")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.bordered)
+                .tint(.orange)
+
                 Button(role: .destructive) {
                     showDeleteAlert = true
                 } label: {
@@ -78,12 +88,15 @@ struct TripDetailView: View {
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.bordered)
-                .padding(.top, 8)
+                .padding(.top, 4)
             }
             .padding(16)
         }
         .navigationTitle(trip.departureDate.formatted(.dateTime.day().month(.abbreviated).year()))
         .navigationBarTitleDisplayMode(.inline)
+        .sheet(isPresented: $showEdit) {
+            EditTripView(trip: trip)
+        }
         .alert("Supprimer ce trajet ?", isPresented: $showDeleteAlert) {
             Button("Supprimer", role: .destructive) {
                 context.delete(trip)

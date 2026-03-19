@@ -1,32 +1,37 @@
 import SwiftUI
 import SwiftData
 
-struct AddFuelFillupView: View {
+struct EditFuelFillupView: View {
 
     @Environment(\.modelContext) private var context
     @Environment(\.dismiss) private var dismiss
 
-    @Query(sort: \FuelFillup.date, order: .reverse) private var fillups: [FuelFillup]
-    @Query private var vehicles: [Vehicle]
+    let fillup: FuelFillup
 
     // MARK: - Champs
 
-    @State private var date: Date = .now
-    @State private var pricePerLiter: String = ""
-    @State private var volumeL: String = ""
-    @State private var distanceSinceLast: String = ""
-    @State private var station: String = ""
-    @State private var note: String = ""
+    @State private var date: Date
+    @State private var pricePerLiter: String
+    @State private var volumeL: String
+    @State private var distanceSinceLast: String
+    @State private var station: String
+    @State private var note: String
 
     // MARK: - UI State
 
     @State private var showValidationError = false
 
-    // MARK: - Computed
-
-    private var defaultVehicle: Vehicle? {
-        vehicles.first(where: { $0.isDefault }) ?? vehicles.first
+    init(fillup: FuelFillup) {
+        self.fillup = fillup
+        _date            = State(initialValue: fillup.date)
+        _pricePerLiter   = State(initialValue: String(format: "%.3f", fillup.pricePerLiter).replacingOccurrences(of: ".", with: ","))
+        _volumeL         = State(initialValue: String(format: "%.2f", fillup.volumeL).replacingOccurrences(of: ".", with: ","))
+        _distanceSinceLast = State(initialValue: fillup.distanceSinceLast.map { String(format: "%.0f", $0) } ?? "")
+        _station         = State(initialValue: fillup.station ?? "")
+        _note            = State(initialValue: fillup.note ?? "")
     }
+
+    // MARK: - Computed
 
     private var previewTotalPrice: Double? {
         guard let price = Double(pricePerLiter.replacingOccurrences(of: ",", with: ".")),
@@ -34,11 +39,17 @@ struct AddFuelFillupView: View {
         return price * vol
     }
 
+    private var previewAvgConsumption: Double? {
+        guard let vol      = Double(volumeL.replacingOccurrences(of: ",", with: ".")),
+              let distance = Double(distanceSinceLast.replacingOccurrences(of: ",", with: ".")),
+              distance > 0 else { return nil }
+        return vol / distance * 100
+    }
+
     private var isFormValid: Bool {
         Double(pricePerLiter.replacingOccurrences(of: ",", with: ".")) != nil &&
         Double(volumeL.replacingOccurrences(of: ",", with: ".")) != nil &&
-        !pricePerLiter.isEmpty &&
-        !volumeL.isEmpty
+        !pricePerLiter.isEmpty && !volumeL.isEmpty
     }
 
     // MARK: - Body
@@ -47,13 +58,11 @@ struct AddFuelFillupView: View {
         NavigationStack {
             Form {
 
-                // MARK: Date
                 Section("Date") {
                     DatePicker("Date du plein", selection: $date, displayedComponents: [.date, .hourAndMinute])
                         .datePickerStyle(.compact)
                 }
 
-                // MARK: Carburant
                 Section("Carburant") {
                     HStack {
                         Text("Prix au litre")
@@ -64,7 +73,6 @@ struct AddFuelFillupView: View {
                         Text("€/L")
                             .foregroundStyle(.secondary)
                     }
-
                     HStack {
                         Text("Volume")
                         Spacer()
@@ -76,7 +84,6 @@ struct AddFuelFillupView: View {
                     }
                 }
 
-                // MARK: Depuis dernier plein (optionnel)
                 Section {
                     HStack {
                         Text("Distance parcourue")
@@ -89,45 +96,50 @@ struct AddFuelFillupView: View {
                                 .foregroundStyle(.secondary)
                         }
                     }
-
                 } header: {
                     Text("Depuis le dernier plein")
                 } footer: {
-                    Text("Optionnel — à remplir si vous notez votre kilométrage.")
+                    Text("Optionnel — à remplir au plein suivant.")
                 }
 
-                // MARK: Station (optionnelle)
                 Section("Station") {
                     TextField("Nom de la station…", text: $station)
                 }
 
-                // MARK: Note (optionnelle)
                 Section("Note") {
                     TextField("Ajouter une note…", text: $note, axis: .vertical)
                         .lineLimit(3, reservesSpace: false)
                 }
 
-                // MARK: Aperçu
+                // Aperçu
                 if let total = previewTotalPrice {
                     Section("Aperçu") {
                         HStack {
-                            Text("Prix total du plein")
+                            Text("Prix total")
                             Spacer()
                             Text(total.formatted(.currency(code: "EUR")))
                                 .foregroundStyle(.teal)
                                 .fontWeight(.semibold)
                         }
+                        if let conso = previewAvgConsumption {
+                            HStack {
+                                Text("Conso moyenne")
+                                Spacer()
+                                Text(String(format: "%.1f L/100", conso))
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
                     }
                 }
             }
-            .navigationTitle("Nouveau plein")
+            .navigationTitle("Modifier le plein")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Annuler") { dismiss() }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Ajouter") {
+                    Button("Enregistrer") {
                         guard isFormValid else {
                             showValidationError = true
                             return
@@ -157,21 +169,13 @@ struct AddFuelFillupView: View {
     // MARK: - Sauvegarde
 
     private func saveFillup() {
-        let price    = Double(pricePerLiter.replacingOccurrences(of: ",", with: "."))!
-        let vol      = Double(volumeL.replacingOccurrences(of: ",", with: "."))!
-        let distance = Double(distanceSinceLast.replacingOccurrences(of: ",", with: "."))
-
-        let fillup = FuelFillup(
-            date:              date,
-            pricePerLiter:     price,
-            volumeL:           vol,
-            distanceSinceLast: distance,
-            station:           station.isEmpty ? nil : station,
-            note:              note.isEmpty ? nil : note,
-            vehicle:           defaultVehicle
-        )
-
-        context.insert(fillup)
+        fillup.date              = date
+        fillup.pricePerLiter     = Double(pricePerLiter.replacingOccurrences(of: ",", with: "."))!
+        fillup.volumeL           = Double(volumeL.replacingOccurrences(of: ",", with: "."))!
+        fillup.distanceSinceLast = Double(distanceSinceLast.replacingOccurrences(of: ",", with: "."))
+        fillup.station           = station.isEmpty ? nil : station
+        fillup.note              = note.isEmpty ? nil : note
+        try? context.save()
         dismiss()
     }
 }
@@ -179,6 +183,6 @@ struct AddFuelFillupView: View {
 // MARK: - Preview
 
 #Preview {
-    AddFuelFillupView()
+    EditFuelFillupView(fillup: SampleData.sampleFillup)
         .modelContainer(previewContainer)
 }

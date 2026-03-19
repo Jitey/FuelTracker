@@ -6,6 +6,7 @@ struct FuelFillupDetailView: View {
     @Environment(\.modelContext) private var context
     @Environment(\.dismiss) private var dismiss
     @State private var showDeleteAlert = false
+    @State private var showEdit = false
 
     var body: some View {
         ScrollView {
@@ -67,7 +68,16 @@ struct FuelFillupDetailView: View {
                     }
                 }
 
-                // Supprimer
+                // Actions
+                Button {
+                    showEdit = true
+                } label: {
+                    Label("Modifier ce plein", systemImage: "pencil")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.bordered)
+                .tint(.orange)
+
                 Button(role: .destructive) {
                     showDeleteAlert = true
                 } label: {
@@ -75,12 +85,15 @@ struct FuelFillupDetailView: View {
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.bordered)
-                .padding(.top, 8)
+                .padding(.top, 4)
             }
             .padding(16)
         }
         .navigationTitle(fillup.date.formatted(.dateTime.day().month(.abbreviated).year()))
         .navigationBarTitleDisplayMode(.inline)
+        .sheet(isPresented: $showEdit) {
+            EditFuelFillupView(fillup: fillup)
+        }
         .alert("Supprimer ce plein ?", isPresented: $showDeleteAlert) {
             Button("Supprimer", role: .destructive) {
                 context.delete(fillup)

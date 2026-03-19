@@ -9,7 +9,6 @@ final class FuelFillup: Hashable {
     var pricePerLiter: Double
     var volumeL: Double
     var distanceSinceLast: Double?
-    var avgConsumption: Double?
     var station: String?
     var note: String?
     var vehicle: Vehicle?
@@ -19,6 +18,12 @@ final class FuelFillup: Hashable {
     /// Prix total du plein : pricePerLiter × volumeL
     var totalPrice: Double {
         pricePerLiter * volumeL
+    }
+
+    /// Consommation moyenne : volumeL / distanceSinceLast × 100
+    var avgConsumption: Double? {
+        guard let distance = distanceSinceLast, distance > 0 else { return nil }
+        return volumeL / distance * 100
     }
 
     /// Coût par kilomètre depuis le dernier plein
@@ -32,7 +37,6 @@ final class FuelFillup: Hashable {
         pricePerLiter: Double,
         volumeL: Double,
         distanceSinceLast: Double? = nil,
-        avgConsumption: Double? = nil,
         station: String? = nil,
         note: String? = nil,
         vehicle: Vehicle? = nil
@@ -42,7 +46,6 @@ final class FuelFillup: Hashable {
         self.pricePerLiter = pricePerLiter
         self.volumeL = volumeL
         self.distanceSinceLast = distanceSinceLast
-        self.avgConsumption = avgConsumption
         self.station = station
         self.note = note
         self.vehicle = vehicle

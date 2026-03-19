@@ -20,7 +20,7 @@ enum SampleData {
 
     @MainActor
     static func insert(into context: ModelContext) {
-        let vehicle = Vehicle(name: "Nissan Juke", isDefault: true)
+        let vehicle = Vehicle(name: "Peugeot 308", isDefault: true)
         context.insert(vehicle)
 
         let trips = [
@@ -77,33 +77,6 @@ enum SampleData {
                 tollCost: 1.00,
                 vehicle: vehicle
             ),
-            Trip(
-                departureDate: date("13/01/2026 12:31"),
-                arrivalDate:   date("13/01/2026 16:28"),
-                distanceKm: 310.0,
-                consumptionL100: 6.2,
-                fuelPricePerL: 2.01,
-                tollCost: 17.00,
-                note: "Trajet autoroute A1",
-                vehicle: vehicle
-            ),
-            Trip(
-                departureDate: date("02/01/2026 08:03"),
-                arrivalDate:   date("02/01/2026 08:27"),
-                distanceKm: 25.8,
-                consumptionL100: 6.2,
-                fuelPricePerL: 1.66,
-                vehicle: vehicle
-            ),
-            Trip(
-                departureDate: date("04/12/2025 16:36"),
-                arrivalDate:   date("04/12/2025 17:00"),
-                distanceKm: 22.4,
-                consumptionL100: 5.2,
-                fuelPricePerL: 1.66,
-                tollCost: 1.00,
-                vehicle: vehicle
-            ),
         ]
 
         trips.forEach { context.insert($0) }
@@ -114,7 +87,6 @@ enum SampleData {
                 pricePerLiter: 1.999,
                 volumeL: 30.21,
                 distanceSinceLast: nil,
-                avgConsumption: nil,
                 station: "Total Énergies A1",
                 vehicle: vehicle
             ),
@@ -123,7 +95,6 @@ enum SampleData {
                 pricePerLiter: 2.010,
                 volumeL: 27.12,
                 distanceSinceLast: 472,
-                avgConsumption: 6.4,
                 station: "Intermarché Breteuil",
                 vehicle: vehicle
             ),
