@@ -1,32 +1,43 @@
-//
-//  FuelTrackerApp.swift
-//  FuelTracker
-//
-//  Created by Jitey on 18/03/2026.
-//
-
 import SwiftUI
 import SwiftData
 
 @main
 struct FuelTrackerApp: App {
-    var sharedModelContainer: ModelContainer = {
-        let schema = Schema([
-            Item.self,
-        ])
-        let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
 
+    let container: ModelContainer
+
+    init() {
         do {
-            return try ModelContainer(for: schema, configurations: [modelConfiguration])
+            container = try ModelContainer(for: Vehicle.self, Trip.self, FuelFillup.self)
+            createDefaultVehicleIfNeeded()
         } catch {
-            fatalError("Could not create ModelContainer: \(error)")
+            fatalError("Impossible de créer le ModelContainer : \(error)")
         }
-    }()
+    }
 
     var body: some Scene {
         WindowGroup {
             ContentView()
         }
-        .modelContainer(sharedModelContainer)
+        .modelContainer(container)
+    }
+
+    // MARK: - Véhicule par défaut
+
+    /// Crée un véhicule par défaut au premier lancement si aucun n'existe
+    private func createDefaultVehicleIfNeeded() {
+        let context = container.mainContext
+        let descriptor = FetchDescriptor<Vehicle>()
+
+        do {
+            let existing = try context.fetch(descriptor)
+            if existing.isEmpty {
+                let defaultVehicle = Vehicle(name: "Mon véhicule", isDefault: true)
+                context.insert(defaultVehicle)
+                try context.save()
+            }
+        } catch {
+            print("Erreur lors de la création du véhicule par défaut : \(error)")
+        }
     }
 }

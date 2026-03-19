@@ -99,11 +99,12 @@
 				};
 			};
 			buildConfigurationList = C7F032D32F6B01D6008D1587 /* Build configuration list for PBXProject "FuelTracker" */;
-			developmentRegion = en;
+			developmentRegion = fr;
 			hasScannedForEncodings = 0;
 			knownRegions = (
 				en,
 				Base,
+				fr,
 			);
 			mainGroup = C7F032CF2F6B01D6008D1587;
 			minimizedProjectReferenceProxies = 1;
