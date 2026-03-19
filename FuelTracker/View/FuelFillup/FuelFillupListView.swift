@@ -4,7 +4,6 @@ import SwiftData
 struct FuelFillupListView: View {
 
     @Query(sort: \FuelFillup.date, order: .reverse) private var fillups: [FuelFillup]
-    @State private var visibleMonth: Date = Calendar.current.startOfMonth(for: .now)
     @State private var showAddFillup = false
 
     private var fillupsByMonth: [(month: Date, fillups: [FuelFillup])] {
@@ -16,32 +15,17 @@ struct FuelFillupListView: View {
             .sorted { $0.month > $1.month }
     }
 
-    private var visibleMonthStats: FillupMonthStats {
-        let monthFillups = fillups.filter {
-            Calendar.current.startOfMonth(for: $0.date) == visibleMonth
-        }
-        return FillupMonthStats(fillups: monthFillups)
-    }
-
     var body: some View {
         NavigationStack {
-            VStack(spacing: 0) {
-                FillupMonthSummaryView(stats: visibleMonthStats, month: visibleMonth)
-                    .padding(.horizontal, 16)
-                    .padding(.top, 8)
-                    .padding(.bottom, 8)
-
-                List {
-                    ForEach(fillupsByMonth, id: \.month) { section in
-                        FillupSectionView(
-                            month: section.month,
-                            fillups: section.fillups,
-                            onVisible: { visibleMonth = section.month }
-                        )
-                    }
+            List {
+                ForEach(fillupsByMonth, id: \.month) { section in
+                    FillupSectionView(
+                        month: section.month,
+                        fillups: section.fillups
+                    )
                 }
-                .listStyle(.plain)
             }
+            .listStyle(.plain)
             .navigationTitle("Pleins d'essence")
             .navigationDestination(for: FuelFillup.self) { fillup in
                 FuelFillupDetailView(fillup: fillup)
@@ -63,46 +47,14 @@ struct FuelFillupListView: View {
     }
 }
 
-// MARK: - Résumé mensuel
-
-struct FillupMonthSummaryView: View {
-    let stats: FillupMonthStats
-    let month: Date
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text(month.formatted(.dateTime.month(.wide).year()))
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-                .textCase(.uppercase)
-                .kerning(0.5)
-
-            HStack(spacing: 10) {
-                SummaryStatCard(
-                    value: "\(stats.fillupCount)",
-                    label: "pleins"
-                )
-                SummaryStatCard(
-                    value: String(format: "%.1f L", stats.totalVolume),
-                    label: "volume total"
-                )
-                SummaryStatCard(
-                    value: stats.totalSpent.formatted(.currency(code: "EUR")),
-                    label: "dépensé",
-                    accentColor: .teal
-                )
-            }
-        }
-    }
-}
-
 // MARK: - Section mensuelle
 
 struct FillupSectionView: View {
     let month: Date
     let fillups: [FuelFillup]
-    let onVisible: () -> Void
     @Environment(\.modelContext) private var context
+
+    private var stats: FillupMonthStats { FillupMonthStats(fillups: fillups) }
 
     var body: some View {
         Section {
@@ -124,12 +76,17 @@ struct FillupSectionView: View {
                 }
             }
         } header: {
-            Text(month.formatted(.dateTime.month(.wide).year()))
-                .font(.headline)
-                .foregroundStyle(.primary)
-                .textCase(nil)
-                .padding(.leading, 16)
-                .onAppear { onVisible() }
+            VStack(alignment: .leading, spacing: 2) {
+                Text(month.formatted(.dateTime.month(.wide).year()))
+                    .font(.headline)
+                    .foregroundStyle(.primary)
+                Text("\(stats.fillupCount) pleins · \(String(format: "%.1f L", stats.totalVolume)) · \(stats.totalSpent.formatted(.currency(code: "EUR")))")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            .textCase(nil)
+            .padding(.leading, 16)
+            .padding(.vertical, 4)
         }
     }
 }
