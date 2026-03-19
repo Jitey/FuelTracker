@@ -6,11 +6,58 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		C70B65322F6BFA8F003B2DEF /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C70B65312F6BFA8E003B2DEF /* WidgetKit.framework */; };
+		C70B65342F6BFA8F003B2DEF /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C70B65332F6BFA8F003B2DEF /* SwiftUI.framework */; };
+		C70B65412F6BFA91003B2DEF /* FuelTrackerWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = C70B652F2F6BFA8E003B2DEF /* FuelTrackerWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		C70B653F2F6BFA91003B2DEF /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = C7F032D02F6B01D6008D1587 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = C70B652E2F6BFA8E003B2DEF;
+			remoteInfo = FuelTrackerWidgetExtension;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		C70B65422F6BFA91003B2DEF /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				C70B65412F6BFA91003B2DEF /* FuelTrackerWidgetExtension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
+		C70B652F2F6BFA8E003B2DEF /* FuelTrackerWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = FuelTrackerWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		C70B65312F6BFA8E003B2DEF /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
+		C70B65332F6BFA8F003B2DEF /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
 		C7F032D82F6B01D6008D1587 /* FuelTracker.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = FuelTracker.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		C70B65462F6BFA91003B2DEF /* Exceptions for "FuelTrackerWidget" folder in "FuelTrackerWidgetExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = C70B652E2F6BFA8E003B2DEF /* FuelTrackerWidgetExtension */;
+		};
+		C70B654A2F6BFB7B003B2DEF /* Exceptions for "FuelTracker" folder in "FuelTrackerWidgetExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Models/TripDraftStore.swift,
+			);
+			target = C70B652E2F6BFA8E003B2DEF /* FuelTrackerWidgetExtension */;
+		};
 		C7F032E52F6B01D8008D1587 /* Exceptions for "FuelTracker" folder in "FuelTracker" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
@@ -21,10 +68,19 @@
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
+		C70B65352F6BFA8F003B2DEF /* FuelTrackerWidget */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				C70B65462F6BFA91003B2DEF /* Exceptions for "FuelTrackerWidget" folder in "FuelTrackerWidgetExtension" target */,
+			);
+			path = FuelTrackerWidget;
+			sourceTree = "<group>";
+		};
 		C7F032DA2F6B01D6008D1587 /* FuelTracker */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
 				C7F032E52F6B01D8008D1587 /* Exceptions for "FuelTracker" folder in "FuelTracker" target */,
+				C70B654A2F6BFB7B003B2DEF /* Exceptions for "FuelTracker" folder in "FuelTrackerWidgetExtension" target */,
 			);
 			path = FuelTracker;
 			sourceTree = "<group>";
@@ -32,6 +88,15 @@
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		C70B652C2F6BFA8E003B2DEF /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				C70B65342F6BFA8F003B2DEF /* SwiftUI.framework in Frameworks */,
+				C70B65322F6BFA8F003B2DEF /* WidgetKit.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		C7F032D52F6B01D6008D1587 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -42,10 +107,21 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		C70B65302F6BFA8E003B2DEF /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				C70B65312F6BFA8E003B2DEF /* WidgetKit.framework */,
+				C70B65332F6BFA8F003B2DEF /* SwiftUI.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		C7F032CF2F6B01D6008D1587 = {
 			isa = PBXGroup;
 			children = (
 				C7F032DA2F6B01D6008D1587 /* FuelTracker */,
+				C70B65352F6BFA8F003B2DEF /* FuelTrackerWidget */,
+				C70B65302F6BFA8E003B2DEF /* Frameworks */,
 				C7F032D92F6B01D6008D1587 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -54,6 +130,7 @@
 			isa = PBXGroup;
 			children = (
 				C7F032D82F6B01D6008D1587 /* FuelTracker.app */,
+				C70B652F2F6BFA8E003B2DEF /* FuelTrackerWidgetExtension.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -61,6 +138,28 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		C70B652E2F6BFA8E003B2DEF /* FuelTrackerWidgetExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = C70B65452F6BFA91003B2DEF /* Build configuration list for PBXNativeTarget "FuelTrackerWidgetExtension" */;
+			buildPhases = (
+				C70B652B2F6BFA8E003B2DEF /* Sources */,
+				C70B652C2F6BFA8E003B2DEF /* Frameworks */,
+				C70B652D2F6BFA8E003B2DEF /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				C70B65352F6BFA8F003B2DEF /* FuelTrackerWidget */,
+			);
+			name = FuelTrackerWidgetExtension;
+			packageProductDependencies = (
+			);
+			productName = FuelTrackerWidgetExtension;
+			productReference = C70B652F2F6BFA8E003B2DEF /* FuelTrackerWidgetExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 		C7F032D72F6B01D6008D1587 /* FuelTracker */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = C7F032E62F6B01D8008D1587 /* Build configuration list for PBXNativeTarget "FuelTracker" */;
@@ -68,10 +167,12 @@
 				C7F032D42F6B01D6008D1587 /* Sources */,
 				C7F032D52F6B01D6008D1587 /* Frameworks */,
 				C7F032D62F6B01D6008D1587 /* Resources */,
+				C70B65422F6BFA91003B2DEF /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				C70B65402F6BFA91003B2DEF /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				C7F032DA2F6B01D6008D1587 /* FuelTracker */,
@@ -93,6 +194,9 @@
 				LastSwiftUpdateCheck = 2630;
 				LastUpgradeCheck = 2630;
 				TargetAttributes = {
+					C70B652E2F6BFA8E003B2DEF = {
+						CreatedOnToolsVersion = 26.3;
+					};
 					C7F032D72F6B01D6008D1587 = {
 						CreatedOnToolsVersion = 26.3;
 					};
@@ -114,11 +218,19 @@
 			projectRoot = "";
 			targets = (
 				C7F032D72F6B01D6008D1587 /* FuelTracker */,
+				C70B652E2F6BFA8E003B2DEF /* FuelTrackerWidgetExtension */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		C70B652D2F6BFA8E003B2DEF /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		C7F032D62F6B01D6008D1587 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -129,6 +241,13 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		C70B652B2F6BFA8E003B2DEF /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		C7F032D42F6B01D6008D1587 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -138,7 +257,75 @@
 		};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin PBXTargetDependency section */
+		C70B65402F6BFA91003B2DEF /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = C70B652E2F6BFA8E003B2DEF /* FuelTrackerWidgetExtension */;
+			targetProxy = C70B653F2F6BFA91003B2DEF /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
 /* Begin XCBuildConfiguration section */
+		C70B65432F6BFA91003B2DEF /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = GH3565TMR5;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = FuelTrackerWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = FuelTrackerWidget;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.jitey.FuelTracker.FuelTrackerWidget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		C70B65442F6BFA91003B2DEF /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = GH3565TMR5;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = FuelTrackerWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = FuelTrackerWidget;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.jitey.FuelTracker.FuelTrackerWidget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
 		C7F032E72F6B01D8008D1587 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -331,6 +518,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		C70B65452F6BFA91003B2DEF /* Build configuration list for PBXNativeTarget "FuelTrackerWidgetExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				C70B65432F6BFA91003B2DEF /* Debug */,
+				C70B65442F6BFA91003B2DEF /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		C7F032D32F6B01D6008D1587 /* Build configuration list for PBXProject "FuelTracker" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (

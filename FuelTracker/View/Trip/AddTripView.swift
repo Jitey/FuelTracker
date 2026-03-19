@@ -6,9 +6,6 @@ struct AddTripView: View {
     @Environment(\.modelContext) private var context
     @Environment(\.dismiss) private var dismiss
 
-    // Récupère le dernier plein pour pré-remplir le prix au litre
-    @Query(sort: \FuelFillup.date, order: .reverse) private var fillups: [FuelFillup]
-
     // Récupère le véhicule par défaut
     @Query private var vehicles: [Vehicle]
 
@@ -32,8 +29,20 @@ struct AddTripView: View {
         vehicles.first(where: { $0.isDefault }) ?? vehicles.first
     }
 
-    private var lastFuelPrice: Double? {
-        fillups.first?.pricePerLiter
+    /// Lookup RECHERCHEV-style : plein le plus récent antérieur à la date du trajet
+    private func activeFillup(for date: Date) -> FuelFillup? {
+        var descriptor = FetchDescriptor<FuelFillup>(
+            predicate: #Predicate { $0.date <= date },
+            sortBy: [SortDescriptor(\FuelFillup.date, order: .reverse)]
+        )
+        descriptor.fetchLimit = 1
+        return try? context.fetch(descriptor).first
+    }
+
+    private func applyFillupPrice(for date: Date) {
+        guard fuelPricePerL.isEmpty, let fillup = activeFillup(for: date) else { return }
+        fuelPricePerL = String(format: "%.3f", fillup.pricePerLiter)
+            .replacingOccurrences(of: ".", with: ",")
     }
 
     private var previewVolumeL: Double? {
@@ -73,6 +82,9 @@ struct AddTripView: View {
                             if arrivalDate < departureDate {
                                 arrivalDate = departureDate
                             }
+                            // Recalcule le bon plein si la date change
+                            fuelPricePerL = ""
+                            applyFillupPrice(for: departureDate)
                         }
 
                     DatePicker("Arrivée", selection: $arrivalDate, in: departureDate..., displayedComponents: [.date, .hourAndMinute])
@@ -104,8 +116,7 @@ struct AddTripView: View {
                     }
                 }
 
-                // MARK: Carburant
-                Section("Carburant") {
+                Section {
                     HStack {
                         Text("Prix au litre")
                         Spacer()
@@ -116,21 +127,11 @@ struct AddTripView: View {
                         Text("€/L")
                             .foregroundStyle(.secondary)
                     }
-
-                    if let lastPrice = lastFuelPrice, fuelPricePerL.isEmpty {
-                        Button {
-                            fuelPricePerL = String(format: "%.3f", lastPrice)
-                                .replacingOccurrences(of: ".", with: ",")
-                        } label: {
-                            HStack {
-                                Image(systemName: "arrow.uturn.left.circle")
-                                Text("Utiliser le dernier prix")
-                                Spacer()
-                                Text(lastPrice.formatted(.currency(code: "EUR")) + "/L")
-                                    .foregroundStyle(.secondary)
-                            }
-                        }
-                        .foregroundStyle(.teal)
+                } header: {
+                    Text("Carburant")
+                } footer: {
+                    if let fillup = activeFillup(for: departureDate) {
+                        Text("Prix depuis le plein du \(fillup.date.formatted(.dateTime.day().month(.abbreviated)))")
                     }
                 }
 
@@ -212,13 +213,15 @@ struct AddTripView: View {
             }
         }
         .onAppear {
-            // Pré-remplir le prix au litre depuis le dernier plein
-            if let lastPrice = lastFuelPrice {
-                fuelPricePerL = String(format: "%.3f", lastPrice)
-                    .replacingOccurrences(of: ".", with: ",")
+            // Récupère la date de départ depuis le widget si disponible
+            if let pending = TripDraftStore.shared.pendingDepartureDate {
+                departureDate = pending
+                if arrivalDate < departureDate {
+                    arrivalDate = departureDate
+                }
             }
-        }
-    }
+            applyFillupPrice(for: departureDate)
+        }    }
 
     // MARK: - Sauvegarde
 
@@ -240,6 +243,7 @@ struct AddTripView: View {
         )
 
         context.insert(trip)
+        TripDraftStore.shared.clear()
         dismiss()
     }
 }
