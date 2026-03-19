@@ -25,26 +25,27 @@ struct FuelFillupListView: View {
 
     var body: some View {
         NavigationStack {
-            ScrollView {
-                LazyVStack(alignment: .leading, spacing: 0) {
+            VStack(spacing: 0) {
+                FillupMonthSummaryView(stats: visibleMonthStats, month: visibleMonth)
+                    .padding(.horizontal, 16)
+                    .padding(.top, 8)
+                    .padding(.bottom, 8)
 
-                    FillupMonthSummaryView(stats: visibleMonthStats, month: visibleMonth)
-                        .padding(.horizontal, 16)
-                        .padding(.top, 8)
-                        .padding(.bottom, 16)
-
+                List {
                     ForEach(fillupsByMonth, id: \.month) { section in
                         FillupSectionView(
                             month: section.month,
                             fillups: section.fillups,
                             onVisible: { visibleMonth = section.month }
                         )
-                        .padding(.bottom, 8)
                     }
                 }
-                .padding(.bottom, 32)
+                .listStyle(.plain)
             }
             .navigationTitle("Pleins d'essence")
+            .navigationDestination(for: FuelFillup.self) { fillup in
+                FuelFillupDetailView(fillup: fillup)
+            }
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button {
@@ -101,21 +102,34 @@ struct FillupSectionView: View {
     let month: Date
     let fillups: [FuelFillup]
     let onVisible: () -> Void
+    @Environment(\.modelContext) private var context
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        Section {
+            ForEach(fillups) { fillup in
+                ZStack {
+                    FuelFillupRowView(fillup: fillup)
+                    NavigationLink(value: fillup) { EmptyView() }
+                        .opacity(0)
+                }
+                .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))
+                .listRowBackground(Color.clear)
+                .listRowSeparator(.hidden)
+                .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                    Button(role: .destructive) {
+                        context.delete(fillup)
+                    } label: {
+                        Label("Supprimer", systemImage: "trash")
+                    }
+                }
+            }
+        } header: {
             Text(month.formatted(.dateTime.month(.wide).year()))
                 .font(.headline)
-                .padding(.horizontal, 16)
+                .foregroundStyle(.primary)
+                .textCase(nil)
+                .padding(.leading, 16)
                 .onAppear { onVisible() }
-
-            ForEach(fillups) { fillup in
-                NavigationLink(destination: FuelFillupDetailView(fillup: fillup)) {
-                    FuelFillupRowView(fillup: fillup)
-                        .padding(.horizontal, 16)
-                }
-                .buttonStyle(.plain)
-            }
         }
     }
 }

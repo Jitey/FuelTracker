@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import WidgetKit
 
 struct AddTripView: View {
 
@@ -244,6 +245,7 @@ struct AddTripView: View {
 
         context.insert(trip)
         TripDraftStore.shared.clear()
+        WidgetCenter.shared.reloadAllTimelines()
         dismiss()
     }
 }

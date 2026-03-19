@@ -8,14 +8,15 @@ final class TripDraftStore {
     private init() {}
 
     private let key = "pendingDepartureDate"
+    private let defaults = UserDefaults(suiteName: "group.com.jitey.fueltracker")!
 
     var pendingDepartureDate: Date? {
-        get { UserDefaults.standard.object(forKey: key) as? Date }
+        get { defaults.object(forKey: key) as? Date }
         set {
             if let date = newValue {
-                UserDefaults.standard.set(date, forKey: key)
+                defaults.set(date, forKey: key)
             } else {
-                UserDefaults.standard.removeObject(forKey: key)
+                defaults.removeObject(forKey: key)
             }
         }
     }

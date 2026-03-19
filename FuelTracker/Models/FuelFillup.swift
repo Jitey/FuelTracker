@@ -2,7 +2,7 @@ import Foundation
 import SwiftData
 
 @Model
-final class FuelFillup {
+final class FuelFillup: Hashable {
 
     var id: UUID
     var date: Date

@@ -28,28 +28,28 @@ struct TripListView: View {
 
     var body: some View {
         NavigationStack {
-            ScrollView {
-                LazyVStack(alignment: .leading, spacing: 0, pinnedViews: []) {
+            VStack(spacing: 0) {
+                // Résumé du mois visible
+                MonthSummaryView(stats: visibleMonthStats, month: visibleMonth)
+                    .padding(.horizontal, 16)
+                    .padding(.top, 8)
+                    .padding(.bottom, 8)
 
-                    // Résumé du mois visible
-                    MonthSummaryView(stats: visibleMonthStats, month: visibleMonth)
-                        .padding(.horizontal, 16)
-                        .padding(.top, 8)
-                        .padding(.bottom, 16)
-
-                    // Sections par mois
+                List {
                     ForEach(tripsByMonth, id: \.month) { section in
                         MonthSectionView(
                             month: section.month,
                             trips: section.trips,
                             onVisible: { visibleMonth = section.month }
                         )
-                        .padding(.bottom, 8)
                     }
                 }
-                .padding(.bottom, 32)
+                .listStyle(.plain)
             }
             .navigationTitle("Mes trajets")
+            .navigationDestination(for: Trip.self) { trip in
+                TripDetailView(trip: trip)
+            }
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button {
@@ -124,26 +124,41 @@ struct SummaryStatCard: View {
 }
 
 // MARK: - Section mensuelle
+// Note: les items du ForEach sont exposés directement à la List parente
+// via @ViewBuilder pour que .swipeActions fonctionne correctement.
 
 struct MonthSectionView: View {
     let month: Date
     let trips: [Trip]
     let onVisible: () -> Void
+    @Environment(\.modelContext) private var context
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        Section {
+            ForEach(trips) { trip in
+                ZStack {
+                    TripRowView(trip: trip)
+                    NavigationLink(value: trip) { EmptyView() }
+                        .opacity(0)
+                }
+                .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))
+                .listRowBackground(Color.clear)
+                .listRowSeparator(.hidden)
+                .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                    Button(role: .destructive) {
+                        context.delete(trip)
+                    } label: {
+                        Label("Supprimer", systemImage: "trash")
+                    }
+                }
+            }
+        } header: {
             Text(month.formatted(.dateTime.month(.wide).year()))
                 .font(.headline)
-                .padding(.horizontal, 16)
+                .foregroundStyle(.primary)
+                .textCase(nil)
+                .padding(.leading, 16)
                 .onAppear { onVisible() }
-
-            ForEach(trips) { trip in
-                NavigationLink(destination: TripDetailView(trip: trip)) {
-                    TripRowView(trip: trip)
-                        .padding(.horizontal, 16)
-                }
-                .buttonStyle(.plain)
-            }
         }
     }
 }

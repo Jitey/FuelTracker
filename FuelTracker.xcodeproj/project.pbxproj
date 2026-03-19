@@ -40,6 +40,7 @@
 		C70B652F2F6BFA8E003B2DEF /* FuelTrackerWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = FuelTrackerWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		C70B65312F6BFA8E003B2DEF /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
 		C70B65332F6BFA8F003B2DEF /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
+		C70B654B2F6C0336003B2DEF /* FuelTrackerWidgetExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = FuelTrackerWidgetExtension.entitlements; sourceTree = "<group>"; };
 		C7F032D82F6B01D6008D1587 /* FuelTracker.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = FuelTracker.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -119,6 +120,7 @@
 		C7F032CF2F6B01D6008D1587 = {
 			isa = PBXGroup;
 			children = (
+				C70B654B2F6C0336003B2DEF /* FuelTrackerWidgetExtension.entitlements */,
 				C7F032DA2F6B01D6008D1587 /* FuelTracker */,
 				C70B65352F6BFA8F003B2DEF /* FuelTrackerWidget */,
 				C70B65302F6BFA8E003B2DEF /* Frameworks */,
@@ -271,6 +273,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_ENTITLEMENTS = FuelTrackerWidgetExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = GH3565TMR5;
@@ -301,6 +304,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_ENTITLEMENTS = FuelTrackerWidgetExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = GH3565TMR5;

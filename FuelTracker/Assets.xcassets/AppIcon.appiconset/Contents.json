@@ -1,7 +1,7 @@
 {
   "images" : [
     {
-      "filename" : "PlaygroundImage.jpeg",
+      "filename" : "AppIcon.png",
       "idiom" : "universal",
       "platform" : "ios",
       "size" : "1024x1024"
@@ -13,6 +13,7 @@
           "value" : "dark"
         }
       ],
+      "filename" : "PlaygroundImage.jpeg",
       "idiom" : "universal",
       "platform" : "ios",
       "size" : "1024x1024"

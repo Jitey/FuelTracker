@@ -2,7 +2,7 @@ import Foundation
 import SwiftData
 
 @Model
-final class Trip {
+final class Trip: Hashable {
 
     var id: UUID
     var departureDate: Date

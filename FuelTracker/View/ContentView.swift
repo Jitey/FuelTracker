@@ -11,8 +11,7 @@ struct ContentView: View {
                 FuelFillupListView()
             }
             Tab("Dashboard", systemImage: "chart.bar.fill") {
-                // DashboardView() — à venir
-                Text("Dashboard")
+                DashboardView()
             }
             Tab("Réglages", systemImage: "gearshape.fill") {
                 // SettingsView() — à venir
