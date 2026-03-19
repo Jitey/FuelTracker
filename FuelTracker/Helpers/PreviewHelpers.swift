@@ -20,7 +20,7 @@ enum SampleData {
 
     @MainActor
     static func insert(into context: ModelContext) {
-        let vehicle = Vehicle(name: "Peugeot 308", isDefault: true)
+        let vehicle = Vehicle(name: "Nissan Juke", isDefault: true)
         context.insert(vehicle)
 
         let trips = [

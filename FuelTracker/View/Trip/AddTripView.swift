@@ -41,9 +41,18 @@ struct AddTripView: View {
     }
 
     private func applyFillupPrice(for date: Date) {
-        guard fuelPricePerL.isEmpty, let fillup = activeFillup(for: date) else { return }
-        fuelPricePerL = String(format: "%.3f", fillup.pricePerLiter)
-            .replacingOccurrences(of: ".", with: ",")
+        guard fuelPricePerL.isEmpty else { return }
+        if let fillup = activeFillup(for: date) {
+            fuelPricePerL = String(format: "%.3f", fillup.pricePerLiter)
+                .replacingOccurrences(of: ".", with: ",")
+        } else {
+            // Fallback sur le prix par défaut des Réglages
+            let defaultPrice = UserDefaults.standard.double(forKey: "defaultFuelPrice")
+            if defaultPrice > 0 {
+                fuelPricePerL = String(format: "%.3f", defaultPrice)
+                    .replacingOccurrences(of: ".", with: ",")
+            }
+        }
     }
 
     private var previewVolumeL: Double? {

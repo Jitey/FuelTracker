@@ -14,8 +14,7 @@ struct ContentView: View {
                 DashboardView()
             }
             Tab("Réglages", systemImage: "gearshape.fill") {
-                // SettingsView() — à venir
-                Text("Réglages")
+                SettingsView()
             }
         }
     }
