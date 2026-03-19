@@ -86,7 +86,7 @@ enum SampleData {
                 date: date("15/03/2026 12:00"),
                 pricePerLiter: 1.999,
                 volumeL: 30.21,
-                distanceSinceLast: nil,
+                distanceUntilNext: 512,
                 station: "Total Énergies A1",
                 vehicle: vehicle
             ),
@@ -94,7 +94,7 @@ enum SampleData {
                 date: date("13/03/2026 10:00"),
                 pricePerLiter: 2.010,
                 volumeL: 27.12,
-                distanceSinceLast: 472,
+                distanceUntilNext: 472,
                 station: "Intermarché Breteuil",
                 vehicle: vehicle
             ),

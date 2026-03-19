@@ -14,7 +14,7 @@ struct AddFuelFillupView: View {
     @State private var date: Date = .now
     @State private var pricePerLiter: String = ""
     @State private var volumeL: String = ""
-    @State private var distanceSinceLast: String = ""
+    @State private var distanceUntilNext: String = ""
     @State private var station: String = ""
     @State private var note: String = ""
 
@@ -81,10 +81,10 @@ struct AddFuelFillupView: View {
                     HStack {
                         Text("Distance parcourue")
                         Spacer()
-                        TextField("Inconnue", text: $distanceSinceLast)
+                        TextField("Inconnue", text: $distanceUntilNext)
                             .keyboardType(.decimalPad)
                             .multilineTextAlignment(.trailing)
-                        if !distanceSinceLast.isEmpty {
+                        if !distanceUntilNext.isEmpty {
                             Text("km")
                                 .foregroundStyle(.secondary)
                         }
@@ -159,19 +159,20 @@ struct AddFuelFillupView: View {
     private func saveFillup() {
         let price    = Double(pricePerLiter.replacingOccurrences(of: ",", with: "."))!
         let vol      = Double(volumeL.replacingOccurrences(of: ",", with: "."))!
-        let distance = Double(distanceSinceLast.replacingOccurrences(of: ",", with: "."))
+        let distance = Double(distanceUntilNext.replacingOccurrences(of: ",", with: "."))
 
         let fillup = FuelFillup(
             date:              date,
             pricePerLiter:     price,
             volumeL:           vol,
-            distanceSinceLast: distance,
+            distanceUntilNext: distance,
             station:           station.isEmpty ? nil : station,
             note:              note.isEmpty ? nil : note,
             vehicle:           defaultVehicle
         )
 
         context.insert(fillup)
+        FillupConsumptionCalculator.recalculate(context: context)
         dismiss()
     }
 }

@@ -40,6 +40,9 @@ struct AddTripView: View {
         return try? context.fetch(descriptor).first
     }
 
+    /// Prix au litre : on prend le plein actif le plus récent antérieur au trajet.
+    /// Pour les longs trajets nécessitant plusieurs pleins (~1% des cas),
+    /// ce prix est approximatif. Une pondération multi-pleins est hors scope.
     private func applyFillupPrice(for date: Date) {
         guard fuelPricePerL.isEmpty else { return }
         if let fillup = activeFillup(for: date) {

@@ -38,10 +38,10 @@ struct FuelFillupDetailView: View {
                     }
                 }
 
-                // Depuis dernier plein
-                if fillup.distanceSinceLast != nil || fillup.avgConsumption != nil {
+                // Jusqu'au prochain plein
+                if fillup.distanceUntilNext != nil || fillup.avgConsumption != nil {
                     InfoSection(title: "Depuis le dernier plein") {
-                        if let distance = fillup.distanceSinceLast {
+                        if let distance = fillup.distanceUntilNext {
                             InfoRow(label: "Distance parcourue",
                                     value: String(format: "%.0f km", distance))
                         }

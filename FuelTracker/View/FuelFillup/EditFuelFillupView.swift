@@ -13,7 +13,7 @@ struct EditFuelFillupView: View {
     @State private var date: Date
     @State private var pricePerLiter: String
     @State private var volumeL: String
-    @State private var distanceSinceLast: String
+    @State private var distanceUntilNext: String
     @State private var station: String
     @State private var note: String
 
@@ -26,7 +26,7 @@ struct EditFuelFillupView: View {
         _date            = State(initialValue: fillup.date)
         _pricePerLiter   = State(initialValue: String(format: "%.3f", fillup.pricePerLiter).replacingOccurrences(of: ".", with: ","))
         _volumeL         = State(initialValue: String(format: "%.2f", fillup.volumeL).replacingOccurrences(of: ".", with: ","))
-        _distanceSinceLast = State(initialValue: fillup.distanceSinceLast.map { String(format: "%.0f", $0) } ?? "")
+        _distanceUntilNext = State(initialValue: fillup.distanceUntilNext.map { String(format: "%.0f", $0) } ?? "")
         _station         = State(initialValue: fillup.station ?? "")
         _note            = State(initialValue: fillup.note ?? "")
     }
@@ -41,7 +41,7 @@ struct EditFuelFillupView: View {
 
     private var previewAvgConsumption: Double? {
         guard let vol      = Double(volumeL.replacingOccurrences(of: ",", with: ".")),
-              let distance = Double(distanceSinceLast.replacingOccurrences(of: ",", with: ".")),
+              let distance = Double(distanceUntilNext.replacingOccurrences(of: ",", with: ".")),
               distance > 0 else { return nil }
         return vol / distance * 100
     }
@@ -88,10 +88,10 @@ struct EditFuelFillupView: View {
                     HStack {
                         Text("Distance parcourue")
                         Spacer()
-                        TextField("Inconnue", text: $distanceSinceLast)
+                        TextField("Inconnue", text: $distanceUntilNext)
                             .keyboardType(.decimalPad)
                             .multilineTextAlignment(.trailing)
-                        if !distanceSinceLast.isEmpty {
+                        if !distanceUntilNext.isEmpty {
                             Text("km")
                                 .foregroundStyle(.secondary)
                         }
@@ -172,10 +172,10 @@ struct EditFuelFillupView: View {
         fillup.date              = date
         fillup.pricePerLiter     = Double(pricePerLiter.replacingOccurrences(of: ",", with: "."))!
         fillup.volumeL           = Double(volumeL.replacingOccurrences(of: ",", with: "."))!
-        fillup.distanceSinceLast = Double(distanceSinceLast.replacingOccurrences(of: ",", with: "."))
+        fillup.distanceUntilNext = Double(distanceUntilNext.replacingOccurrences(of: ",", with: "."))
         fillup.station           = station.isEmpty ? nil : station
         fillup.note              = note.isEmpty ? nil : note
-        try? context.save()
+        FillupConsumptionCalculator.recalculate(context: context)
         dismiss()
     }
 }

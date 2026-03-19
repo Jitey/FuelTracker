@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import UniformTypeIdentifiers
 
 struct SettingsView: View {
 
@@ -14,6 +15,9 @@ struct SettingsView: View {
     @State private var showExportSheet = false
     @State private var exportURL: URL? = nil
     @State private var exportType: ExportType = .trips
+    @State private var showImport = false
+    @State private var importType: ExportType = .trips
+    @State private var importResult: ImportResult? = nil
 
     enum ExportType { case trips, fillups }
 
@@ -57,22 +61,50 @@ struct SettingsView: View {
                     Text("Utilisé uniquement si aucun plein n'est enregistré avant un trajet.")
                 }
 
-                // MARK: Export
-                Section("Données") {
+                // MARK: Export / Import
+                Section("Trajets") {
                     Button {
                         exportType = .trips
                         exportURL = generateCSV(type: .trips)
                         showExportSheet = true
                     } label: {
-                        Label("Exporter les trajets", systemImage: "arrow.up.doc")
+                        Label("Exporter", systemImage: "arrow.up.doc")
                     }
+                    Button {
+                        importType = .trips
+                        showImport = true
+                    } label: {
+                        Label("Importer", systemImage: "arrow.down.doc")
+                    }
+                    Button {
+                        exportURL = SettingsView.sampleCSV(type: .trips)
+                        showExportSheet = true
+                    } label: {
+                        Label("Télécharger le fichier exemple", systemImage: "doc.badge.plus")
+                            .foregroundStyle(.secondary)
+                    }
+                }
 
+                Section("Pleins") {
                     Button {
                         exportType = .fillups
                         exportURL = generateCSV(type: .fillups)
                         showExportSheet = true
                     } label: {
-                        Label("Exporter les pleins", systemImage: "arrow.up.doc")
+                        Label("Exporter", systemImage: "arrow.up.doc")
+                    }
+                    Button {
+                        importType = .fillups
+                        showImport = true
+                    } label: {
+                        Label("Importer", systemImage: "arrow.down.doc")
+                    }
+                    Button {
+                        exportURL = SettingsView.sampleCSV(type: .fillups)
+                        showExportSheet = true
+                    } label: {
+                        Label("Télécharger le fichier exemple", systemImage: "doc.badge.plus")
+                            .foregroundStyle(.secondary)
                     }
                 }
 
@@ -125,6 +157,30 @@ struct SettingsView: View {
                     ShareSheet(url: url)
                 }
             }
+            .fileImporter(
+                isPresented: $showImport,
+                allowedContentTypes: [.commaSeparatedText, .text],
+                allowsMultipleSelection: false
+            ) { result in
+                guard let url = try? result.get().first else { return }
+                switch importType {
+                case .trips:
+                    importResult = CSVImporter.importTrips(from: url, context: context, vehicle: defaultVehicle)
+                case .fillups:
+                    importResult = CSVImporter.importFillups(from: url, context: context, vehicle: defaultVehicle)
+                    if importResult?.success == true {
+                        FillupConsumptionCalculator.recalculate(context: context)
+                    }
+                }
+            }
+            .alert(importResult?.title ?? "", isPresented: .init(
+                get: { importResult != nil },
+                set: { if !$0 { importResult = nil } }
+            )) {
+                Button("OK", role: .cancel) { importResult = nil }
+            } message: {
+                Text(importResult?.message ?? "")
+            }
         }
     }
 
@@ -163,62 +219,79 @@ struct SettingsView: View {
     // MARK: - Export CSV
 
     private func generateCSV(type: ExportType) -> URL? {
-        let content: String
+        let formatter = DateFormatter()
+        formatter.dateFormat = "dd/MM/yyyy HH:mm"
+        formatter.locale = Locale(identifier: "fr_FR")
+        let csvContent: String
 
         switch type {
         case .trips:
-            var rows = ["Départ;Arrivée;Durée;Distance (km);Conso (L/100);Volume (L);Péage;Prix/L;Coût total;Note"]
-            let formatter = DateFormatter()
-            formatter.dateFormat = "dd/MM/yyyy HH:mm"
-            formatter.locale = Locale(identifier: "fr_FR")
-
-            for trip in trips {
-                let toll = trip.tollCost.map { String(format: "%.2f €", $0) } ?? ""
+            var rows = ["Départ;Arrivée;Distance;Conso;Prix/L;Péage;Note"]
+            for trip in trips.sorted(by: { $0.departureDate < $1.departureDate }) {
                 rows.append([
                     formatter.string(from: trip.departureDate),
                     formatter.string(from: trip.arrivalDate),
-                    trip.durationFormatted,
                     String(format: "%.1f", trip.distanceKm),
                     String(format: "%.1f", trip.consumptionL100),
-                    String(format: "%.2f", trip.volumeL),
-                    toll,
-                    String(format: "%.3f €", trip.fuelPricePerL),
-                    String(format: "%.2f €", trip.totalCost),
+                    String(format: "%.3f", trip.fuelPricePerL),
+                    trip.tollCost.map { String(format: "%.2f", $0) } ?? "",
                     trip.note ?? ""
                 ].joined(separator: ";"))
             }
-            content = rows.joined(separator: "\n")
+            csvContent = rows.joined(separator: "\n")
 
         case .fillups:
-            var rows = ["Date;Prix/L;Volume (L);Prix total;Distance depuis dernier;Conso moy.;Station;Note"]
-            let formatter = DateFormatter()
-            formatter.dateFormat = "dd/MM/yyyy HH:mm"
-            formatter.locale = Locale(identifier: "fr_FR")
-
-            for fillup in fillups {
-                let distance = fillup.distanceSinceLast.map { String(format: "%.0f km", $0) } ?? ""
-                let conso    = fillup.avgConsumption.map    { String(format: "%.1f L/100", $0) } ?? ""
+            var rows = ["Date;Prix/L;Volume;Distance;Station;Note"]
+            for fillup in fillups.sorted(by: { $0.date < $1.date }) {
                 rows.append([
                     formatter.string(from: fillup.date),
-                    String(format: "%.3f €", fillup.pricePerLiter),
+                    String(format: "%.3f", fillup.pricePerLiter),
                     String(format: "%.2f", fillup.volumeL),
-                    String(format: "%.2f €", fillup.totalPrice),
-                    distance,
-                    conso,
+                    fillup.distanceUntilNext.map { String(format: "%.0f", $0) } ?? "",
                     fillup.station ?? "",
                     fillup.note ?? ""
                 ].joined(separator: ";"))
             }
-            content = rows.joined(separator: "\n")
+            csvContent = rows.joined(separator: "\n")
         }
 
         let filename = type == .trips ? "trajets_export.csv" : "pleins_export.csv"
         let url = FileManager.default.temporaryDirectory.appendingPathComponent(filename)
-        try? content.write(to: url, atomically: true, encoding: .utf8)
+        try? csvContent.write(to: url, atomically: true, encoding: .utf8)
         return url
     }
 
-    // MARK: - Helpers
+    // MARK: - Fichiers exemple
+
+    static func sampleCSV(type: ExportType) -> URL? {
+        let lines: [String]
+        let filename: String
+
+        switch type {
+        case .trips:
+            filename = "exemple_trajets.csv"
+            lines = [
+                "Départ;Arrivée;Distance;Conso;Prix/L;Péage;Note",
+                "18/09/2025 08:14;18/09/2025 08:48;24.1;4.2;1.610;;",
+                "18/09/2025 16:23;18/09/2025 17:03;24.1;5.2;1.610;;Retour",
+                "23/09/2025 16:45;23/09/2025 17:16;22.7;6.2;1.610;1.00;Autoroute"
+            ]
+        case .fillups:
+            filename = "exemple_pleins.csv"
+            lines = [
+                "Date;Prix/L;Volume;Distance;Station;Note",
+                "17/09/2025 09:00;1.610;37.79;672;Total Energie;",
+                "04/10/2025 10:30;1.599;36.81;660;Intermarché;",
+                "22/10/2025 08:15;1.555;38.21;673;;Prix bas"
+            ]
+        }
+
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent(filename)
+        try? lines.joined(separator: "\n").write(to: url, atomically: true, encoding: .utf8)
+        return url
+    }
+
+        // MARK: - Helpers
 
     private var appVersion: String {
         let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "—"
