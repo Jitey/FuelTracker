@@ -12,23 +12,41 @@ struct DashboardView: View {
     // MARK: - Période
 
     enum Period: String, CaseIterable {
-        case oneMonth  = "1 mois"
+        case oneMonth    = "1 mois"
         case threeMonths = "3 mois"
-        case sixMonths = "6 mois"
-        case oneYear   = "1 an"
-        case all       = "Tout"
+        case sixMonths   = "6 mois"
+        case oneYear     = "1 an"
+        case all         = "Tout"
 
         var startDate: Date? {
-            let calendar = Calendar.current
+            let cal = Calendar.current
             switch self {
-            case .oneMonth:    return calendar.date(byAdding: .month, value: -1, to: .now)
-            case .threeMonths: return calendar.date(byAdding: .month, value: -3, to: .now)
-            case .sixMonths:   return calendar.date(byAdding: .month, value: -6, to: .now)
-            case .oneYear:     return calendar.date(byAdding: .year,  value: -1, to: .now)
+            case .oneMonth:    return cal.date(byAdding: .month, value: -1,  to: .now)
+            case .threeMonths: return cal.date(byAdding: .month, value: -3,  to: .now)
+            case .sixMonths:   return cal.date(byAdding: .month, value: -6,  to: .now)
+            case .oneYear:     return cal.date(byAdding: .year,  value: -1,  to: .now)
             case .all:         return nil
             }
         }
+
+        var granularity: Granularity {
+            switch self {
+            case .oneMonth, .threeMonths: return .week
+            case .sixMonths, .oneYear:    return .month
+            case .all:                    return .quarter
+            }
+        }
+
+        var visiblePoints: Int {
+            switch self {
+            case .oneMonth:    return 4
+            case .threeMonths: return 6
+            default:           return 6
+            }
+        }
     }
+
+    enum Granularity { case week, month, quarter }
 
     // MARK: - Données filtrées
 
@@ -56,41 +74,43 @@ struct DashboardView: View {
         return valid.reduce(0) { $0 + $1.pricePerLiter } / Double(valid.count)
     }
 
-    // MARK: - Données graphiques par mois
+    // MARK: - Agrégation dynamique
 
-    private var monthlyData: [MonthlyStats] {
-        let calendar = Calendar.current
-        let allDates = (filteredTrips.map { $0.departureDate } + filteredFillups.map { $0.date })
-        guard !allDates.isEmpty else { return [] }
+    private var aggregatedData: [PeriodStats] {
+        let cal = Calendar.current
 
-        let tripsByMonth = Dictionary(grouping: filteredTrips) {
-            calendar.startOfMonth(for: $0.departureDate)
+        func bucketStart(_ date: Date) -> Date {
+            switch selectedPeriod.granularity {
+            case .week:
+                return cal.dateInterval(of: .weekOfYear, for: date)?.start ?? date
+            case .month:
+                return cal.startOfMonth(for: date)
+            case .quarter:
+                let month = cal.component(.month, from: date)
+                let qMonth = ((month - 1) / 3) * 3 + 1
+                var comps = cal.dateComponents([.year], from: date)
+                comps.month = qMonth
+                comps.day = 1
+                return cal.date(from: comps) ?? date
+            }
         }
-        let fillupsByMonth = Dictionary(grouping: filteredFillups) {
-            calendar.startOfMonth(for: $0.date)
-        }
 
-        let allMonths = Set(
-            tripsByMonth.keys.map { $0 } + fillupsByMonth.keys.map { $0 }
-        ).sorted()
+        let tripsByBucket   = Dictionary(grouping: filteredTrips)   { bucketStart($0.departureDate) }
+        let fillupsByBucket = Dictionary(grouping: filteredFillups) { bucketStart($0.date) }
+        let allBuckets      = Set(Array(tripsByBucket.keys) + Array(fillupsByBucket.keys)).sorted()
 
-        return allMonths.map { month in
-            let mTrips   = tripsByMonth[month] ?? []
-            let mFillups = fillupsByMonth[month] ?? []
-
-            let totalCost     = mTrips.reduce(0) { $0 + $1.totalCost }
-            let totalDistance = mTrips.reduce(0) { $0 + $1.distanceKm }
-            let avgConso      = mTrips.isEmpty ? nil :
-                mTrips.reduce(0) { $0 + $1.consumptionL100 } / Double(mTrips.count)
-            let avgPrice      = mFillups.isEmpty ? nil :
-                mFillups.reduce(0) { $0 + $1.pricePerLiter } / Double(mFillups.count)
-
-            return MonthlyStats(
-                month: month,
-                totalCost: totalCost,
-                totalDistance: totalDistance,
+        return allBuckets.map { bucket in
+            let bTrips   = tripsByBucket[bucket]   ?? []
+            let bFillups = fillupsByBucket[bucket] ?? []
+            let avgConso = bTrips.isEmpty   ? nil : bTrips.reduce(0)   { $0 + $1.consumptionL100 } / Double(bTrips.count)
+            let avgPrice = bFillups.isEmpty ? nil : bFillups.reduce(0) { $0 + $1.pricePerLiter }   / Double(bFillups.count)
+            return PeriodStats(
+                bucketStart:    bucket,
+                granularity:    selectedPeriod.granularity,
+                totalCost:      bTrips.reduce(0) { $0 + $1.totalCost },
+                totalDistance:  bTrips.reduce(0) { $0 + $1.distanceKm },
                 avgConsumption: avgConso,
-                avgFuelPrice: avgPrice
+                avgFuelPrice:   avgPrice
             )
         }
     }
@@ -102,35 +122,24 @@ struct DashboardView: View {
             ScrollView {
                 VStack(spacing: 16) {
 
-                    // Sélecteur de période
                     Picker("Période", selection: $selectedPeriod) {
-                        ForEach(Period.allCases, id: \.self) { period in
-                            Text(period.rawValue).tag(period)
-                        }
+                        ForEach(Period.allCases, id: \.self) { Text($0.rawValue).tag($0) }
                     }
                     .pickerStyle(.segmented)
                     .padding(.horizontal, 16)
                     .padding(.top, 8)
 
-                    // Stat cards
                     HStack(spacing: 12) {
-                        StatCard(
-                            label: "Conso moyenne",
-                            value: avgConsumption.map { String(format: "%.1f", $0) } ?? "—",
-                            unit: "L/100",
-                            color: .primary
-                        )
-                        StatCard(
-                            label: "Prix moyen/litre",
-                            value: avgFuelPrice.map { String(format: "%.3f", $0) } ?? "—",
-                            unit: "€/L",
-                            color: .teal
-                        )
+                        StatCard(label: "Conso moyenne",
+                                 value: avgConsumption.map { String(format: "%.1f", $0) } ?? "—",
+                                 unit: "L/100", color: .primary)
+                        StatCard(label: "Prix moyen/litre",
+                                 value: avgFuelPrice.map { String(format: "%.3f", $0) } ?? "—",
+                                 unit: "€/L", color: .teal)
                     }
                     .padding(.horizontal, 16)
 
-                    // Graphiques
-                    if monthlyData.isEmpty {
+                    if aggregatedData.isEmpty {
                         ContentUnavailableView(
                             "Pas encore de données",
                             systemImage: "chart.bar",
@@ -138,17 +147,36 @@ struct DashboardView: View {
                         )
                         .padding(.top, 40)
                     } else {
-                        FuelPriceChartView(data: monthlyData)
-                            .padding(.horizontal, 16)
+                        FuelPriceChartView(
+                            data: aggregatedData.filter { $0.avgFuelPrice != nil },
+                            visiblePoints: selectedPeriod.visiblePoints
+                        )
+                        .padding(.horizontal, 16)
 
-                        MonthlyCostChartView(data: monthlyData)
-                            .padding(.horizontal, 16)
+                        CustomBarChartView(
+                            title: "Coût mensuel",
+                            data: aggregatedData,
+                            value: \.totalCost,
+                            formatter: { String(format: "%.0f €", $0) }
+                        )
+                        .padding(.horizontal, 16)
 
-                        MonthlyDistanceChartView(data: monthlyData)
-                            .padding(.horizontal, 16)
+                        CustomBarChartView(
+                            title: "Distance mensuelle",
+                            data: aggregatedData,
+                            value: \.totalDistance,
+                            formatter: { String(format: "%.0f km", $0) }
+                        )
+                        .padding(.horizontal, 16)
 
-                        MonthlyConsumptionChartView(data: monthlyData)
-                            .padding(.horizontal, 16)
+                        CustomBarChartView(
+                            title: "Consommation moy.",
+                            data: aggregatedData,
+                            value: { $0.avgConsumption ?? 0 },
+                            formatter: { String(format: "%.1f L/100", $0) },
+                            skipZero: true
+                        )
+                        .padding(.horizontal, 16)
                     }
                 }
                 .padding(.bottom, 32)
@@ -158,18 +186,29 @@ struct DashboardView: View {
     }
 }
 
-// MARK: - Modèle données mensuelles
+// MARK: - Modèle période agrégée
 
-struct MonthlyStats: Identifiable {
+struct PeriodStats: Identifiable {
     let id = UUID()
-    let month: Date
+    let bucketStart: Date
+    let granularity: DashboardView.Granularity
     let totalCost: Double
     let totalDistance: Double
     let avgConsumption: Double?
     let avgFuelPrice: Double?
 
-    var monthLabel: String {
-        month.formatted(.dateTime.month(.abbreviated))
+    var label: String {
+        switch granularity {
+        case .week:
+            return bucketStart.formatted(.dateTime.day().month(.abbreviated))
+        case .month:
+            return bucketStart.formatted(.dateTime.month(.abbreviated))
+        case .quarter:
+            let month = Calendar.current.component(.month, from: bucketStart)
+            let q = (month - 1) / 3 + 1
+            let year = bucketStart.formatted(.dateTime.year(.twoDigits))
+            return "T\(q) \(year)"
+        }
     }
 }
 
@@ -201,125 +240,122 @@ struct StatCard: View {
     }
 }
 
-// MARK: - Chart : Évolution prix au litre
+// MARK: - Courbe prix au litre (Swift Charts + scroll)
 
 struct FuelPriceChartView: View {
-    let data: [MonthlyStats]
-    private var priceData: [MonthlyStats] { data.filter { $0.avgFuelPrice != nil } }
+    let data: [PeriodStats]
+    let visiblePoints: Int
 
     var body: some View {
         ChartCard(title: "Évolution prix au litre") {
-            Chart(priceData) { item in
+            Chart(data) { item in
                 LineMark(
-                    x: .value("Mois", item.monthLabel),
+                    x: .value("Période", item.label),
                     y: .value("Prix", item.avgFuelPrice ?? 0)
                 )
                 .foregroundStyle(Color.teal)
                 .interpolationMethod(.catmullRom)
 
                 AreaMark(
-                    x: .value("Mois", item.monthLabel),
+                    x: .value("Période", item.label),
                     y: .value("Prix", item.avgFuelPrice ?? 0)
                 )
                 .foregroundStyle(Color.teal.opacity(0.08))
                 .interpolationMethod(.catmullRom)
 
                 PointMark(
-                    x: .value("Mois", item.monthLabel),
+                    x: .value("Période", item.label),
                     y: .value("Prix", item.avgFuelPrice ?? 0)
                 )
                 .foregroundStyle(Color.teal)
-                .symbolSize(30)
+                .symbolSize(25)
             }
             .chartYAxis {
                 AxisMarks(format: .currency(code: "EUR").precision(.fractionLength(2)))
             }
-            .frame(height: 140)
+            .chartScrollableAxes(.horizontal)
+            .chartXVisibleDomain(length: visiblePoints)
+            .frame(height: 160)
         }
     }
 }
 
-// MARK: - Chart : Coût mensuel
+// MARK: - Barres horizontales custom
 
-struct MonthlyCostChartView: View {
-    let data: [MonthlyStats]
+struct CustomBarChartView: View {
+    let title: String
+    let data: [PeriodStats]
+    let value: (PeriodStats) -> Double
+    let formatter: (Double) -> String
+    var skipZero: Bool = false
 
-    var body: some View {
-        ChartCard(title: "Coût mensuel") {
-            Chart(data) { item in
-                BarMark(
-                    x: .value("Coût", item.totalCost),
-                    y: .value("Mois", item.monthLabel)
-                )
-                .foregroundStyle(Color.teal.gradient)
-                .cornerRadius(4)
-            }
-            .chartXAxis {
-                AxisMarks(format: .currency(code: "EUR").precision(.fractionLength(0)))
-            }
-            .frame(height: Double(data.count) * 36 + 16)
-        }
+    private var displayData: [PeriodStats] {
+        let d = skipZero ? data.filter { value($0) > 0 } : data
+        return d.reversed()
     }
-}
 
-// MARK: - Chart : Distance mensuelle
+    private var maxValue: Double {
+        displayData.map { value($0) }.max() ?? 1
+    }
 
-struct MonthlyDistanceChartView: View {
-    let data: [MonthlyStats]
+    private let rowHeight: CGFloat  = 22
+    private let rowSpacing: CGFloat = 8
+    private let labelWidth: CGFloat = 46
+    private let valueWidth: CGFloat = 76
+    private let visibleRows: Int    = 5
+
+    private var totalRows: Int { displayData.count }
+
+    private var visibleHeight: CGFloat {
+        CGFloat(min(totalRows, visibleRows)) * (rowHeight + rowSpacing)
+    }
 
     var body: some View {
-        ChartCard(title: "Distance mensuelle") {
-            Chart(data) { item in
-                BarMark(
-                    x: .value("Distance", item.totalDistance),
-                    y: .value("Mois", item.monthLabel)
-                )
-                .foregroundStyle(Color.teal.opacity(0.7).gradient)
-                .cornerRadius(4)
-            }
-            .chartXAxis {
-                AxisMarks { value in
-                    AxisValueLabel {
-                        if let v = value.as(Double.self) {
-                            Text("\(Int(v)) km")
+        ChartCard(title: title) {
+            ScrollView(.vertical, showsIndicators: false) {
+                VStack(spacing: rowSpacing) {
+                    ForEach(displayData) { item in
+                        let val   = value(item)
+                        let ratio = maxValue > 0 ? val / maxValue : 0
+                        let isMax = val == maxValue && val > 0
+
+                        HStack(spacing: 8) {
+                            Text(item.label)
                                 .font(.caption2)
+                                .foregroundStyle(.secondary)
+                                .frame(width: labelWidth, alignment: .trailing)
+                                .lineLimit(1)
+
+                            GeometryReader { geo in
+                                ZStack(alignment: .leading) {
+                                    RoundedRectangle(cornerRadius: 3)
+                                        .fill(Color(.systemFill))
+                                        .frame(height: rowHeight)
+
+                                    RoundedRectangle(cornerRadius: 3)
+                                        .fill(isMax ? Color.teal : Color.teal.opacity(0.55))
+                                        .frame(
+                                            width: max(4, geo.size.width * ratio),
+                                            height: rowHeight
+                                        )
+                                        .animation(.easeOut(duration: 0.35), value: ratio)
+                                }
+                            }
+                            .frame(height: rowHeight)
+
+                            Text(formatter(val))
+                                .font(.caption2)
+                                .fontWeight(isMax ? .semibold : .regular)
+                                .foregroundStyle(isMax ? Color.teal : .secondary)
+                                .frame(width: valueWidth, alignment: .leading)
+                                .lineLimit(1)
                         }
+                        .frame(height: rowHeight)
                     }
                 }
+                .padding(.vertical, 4)
             }
-            .frame(height: Double(data.count) * 36 + 16)
-        }
-    }
-}
-
-// MARK: - Chart : Consommation mensuelle
-
-struct MonthlyConsumptionChartView: View {
-    let data: [MonthlyStats]
-    private var consoData: [MonthlyStats] { data.filter { $0.avgConsumption != nil } }
-
-    var body: some View {
-        ChartCard(title: "Consommation mensuelle") {
-            Chart(consoData) { item in
-                BarMark(
-                    x: .value("Conso", item.avgConsumption ?? 0),
-                    y: .value("Mois", item.monthLabel)
-                )
-                .foregroundStyle(Color.teal.opacity(0.5).gradient)
-                .cornerRadius(4)
-            }
-            .chartXAxis {
-                AxisMarks { value in
-                    AxisValueLabel {
-                        if let v = value.as(Double.self) {
-                            Text(String(format: "%.1f", v))
-                                .font(.caption2)
-                        }
-                    }
-                }
-            }
-            .chartXScale(domain: 4...10)
-            .frame(height: Double(consoData.count) * 36 + 16)
+            .frame(height: visibleHeight)
         }
     }
 }
