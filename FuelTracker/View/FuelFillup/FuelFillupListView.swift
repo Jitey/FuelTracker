@@ -5,6 +5,7 @@ struct FuelFillupListView: View {
 
     @Query(sort: \FuelFillup.date, order: .reverse) private var fillups: [FuelFillup]
     @State private var showAddFillup = false
+    @State private var fillupToEdit: FuelFillup? = nil  // ← remonté ici
 
     private var fillupsByMonth: [(month: Date, fillups: [FuelFillup])] {
         let grouped = Dictionary(grouping: fillups) { fillup in
@@ -21,7 +22,8 @@ struct FuelFillupListView: View {
                 ForEach(fillupsByMonth, id: \.month) { section in
                     FillupSectionView(
                         month: section.month,
-                        fillups: section.fillups
+                        fillups: section.fillups,
+                        fillupToEdit: $fillupToEdit  // ← binding passé en bas
                     )
                 }
             }
@@ -43,6 +45,10 @@ struct FuelFillupListView: View {
             .sheet(isPresented: $showAddFillup) {
                 AddFuelFillupView()
             }
+            // ← sheet géré ici sur la vue stable
+            .sheet(item: $fillupToEdit) { fillup in
+                EditFuelFillupView(fillup: fillup)
+            }
         }
     }
 }
@@ -53,7 +59,7 @@ struct FillupSectionView: View {
     let month: Date
     let fillups: [FuelFillup]
     @Environment(\.modelContext) private var context
-    @State private var fillupToEdit: FuelFillup? = nil
+    @Binding var fillupToEdit: FuelFillup?  // ← binding au lieu de @State local
 
     private var stats: FillupMonthStats { FillupMonthStats(fillups: fillups) }
 
@@ -97,9 +103,7 @@ struct FillupSectionView: View {
             .padding(.leading, 16)
             .padding(.vertical, 4)
         }
-        .sheet(item: $fillupToEdit) { fillup in
-            EditFuelFillupView(fillup: fillup)
-        }
+        // ← .sheet supprimé d'ici
     }
 }
 

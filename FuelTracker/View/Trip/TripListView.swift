@@ -15,6 +15,7 @@ struct TripListView: View {
     @Query(sort: \Trip.departureDate, order: .reverse) private var trips: [Trip]
     @State private var showAddTrip = false
     @State private var groupingPeriod: GroupingPeriod = .month
+    @State private var tripToEdit: Trip? = nil  // ← remonté ici
 
     private var tripsByPeriod: [(period: Date, trips: [Trip])] {
         let calendar = Calendar.current
@@ -52,7 +53,8 @@ struct TripListView: View {
                     PeriodSectionView(
                         period: section.period,
                         trips: section.trips,
-                        grouping: groupingPeriod
+                        grouping: groupingPeriod,
+                        tripToEdit: $tripToEdit  // ← binding passé en bas
                     )
                 }
             }
@@ -82,6 +84,10 @@ struct TripListView: View {
             .sheet(isPresented: $showAddTrip) {
                 AddTripView()
             }
+            // ← sheet géré ici sur la vue stable
+            .sheet(item: $tripToEdit) { trip in
+                EditTripView(trip: trip)
+            }
         }
     }
 }
@@ -94,9 +100,9 @@ struct PeriodSectionView: View {
     let period: Date
     let trips: [Trip]
     let grouping: GroupingPeriod
+    @Binding var tripToEdit: Trip?  // ← binding au lieu de @State local
 
     @Environment(\.modelContext) private var context
-    @State private var tripToEdit: Trip? = nil
 
     private var stats: MonthStats { MonthStats(trips: trips) }
 
@@ -156,9 +162,7 @@ struct PeriodSectionView: View {
             .padding(.leading, 16)
             .padding(.vertical, 4)
         }
-        .sheet(item: $tripToEdit) { trip in
-            EditTripView(trip: trip)
-        }
+        // ← .sheet supprimé d'ici
     }
 }
 
