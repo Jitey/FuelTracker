@@ -8,7 +8,7 @@ struct FuelTrackerApp: App {
 
     init() {
         do {
-            container = try ModelContainer(for: Vehicle.self, Trip.self, FuelFillup.self)
+            container = try ModelContainer(for: Vehicle.self, Trip.self, FuelFillup.self, Route.self)
             createDefaultVehicleIfNeeded()
         } catch {
             fatalError("Impossible de créer le ModelContainer : \(error)")

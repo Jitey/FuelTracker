@@ -7,7 +7,7 @@ import SwiftData
 let previewContainer: ModelContainer = {
     let config = ModelConfiguration(isStoredInMemoryOnly: true)
     let container = try! ModelContainer(
-        for: Vehicle.self, Trip.self, FuelFillup.self,
+        for: Vehicle.self, Trip.self, FuelFillup.self, Route.self,
         configurations: config
     )
     SampleData.insert(into: container.mainContext)
@@ -23,6 +23,20 @@ enum SampleData {
         let vehicle = Vehicle(name: "Peugeot 308", isDefault: true)
         context.insert(vehicle)
 
+        // Routes récurrentes
+        let routeMaisonBureau = Route(
+            origin: "Maison",
+            destination: "Bureau",
+            colorName: RouteColor.teal.rawValue
+        )
+        let routeMaisonParents = Route(
+            origin: "Maison",
+            destination: "Parents",
+            colorName: RouteColor.indigo.rawValue
+        )
+        context.insert(routeMaisonBureau)
+        context.insert(routeMaisonParents)
+
         let trips = [
             Trip(
                 departureDate: date("15/03/2026 17:42"),
@@ -32,7 +46,10 @@ enum SampleData {
                 fuelPricePerL: 2.00,
                 tollCost: 4.80,
                 note: "Retour de week-end",
-                vehicle: vehicle
+                vehicle: vehicle,
+                route: routeMaisonParents,
+                isReturn: true,
+                routeVariant: "Autoroute"
             ),
             Trip(
                 departureDate: date("15/03/2026 16:24"),
@@ -48,7 +65,9 @@ enum SampleData {
                 distanceKm: 157.1,
                 consumptionL100: 6.2,
                 fuelPricePerL: 2.01,
-                vehicle: vehicle
+                vehicle: vehicle,
+                route: routeMaisonParents,
+                isReturn: false
             ),
             Trip(
                 departureDate: date("13/03/2026 12:31"),
@@ -58,7 +77,10 @@ enum SampleData {
                 fuelPricePerL: 2.01,
                 tollCost: 17.00,
                 note: "Trajet autoroute A1",
-                vehicle: vehicle
+                vehicle: vehicle,
+                route: routeMaisonParents,
+                isReturn: false,
+                routeVariant: "A1"
             ),
             Trip(
                 departureDate: date("02/02/2026 08:03"),
@@ -66,7 +88,9 @@ enum SampleData {
                 distanceKm: 25.8,
                 consumptionL100: 6.2,
                 fuelPricePerL: 1.66,
-                vehicle: vehicle
+                vehicle: vehicle,
+                route: routeMaisonBureau,
+                isReturn: false
             ),
             Trip(
                 departureDate: date("04/02/2026 16:36"),
@@ -75,7 +99,9 @@ enum SampleData {
                 consumptionL100: 5.2,
                 fuelPricePerL: 1.66,
                 tollCost: 1.00,
-                vehicle: vehicle
+                vehicle: vehicle,
+                route: routeMaisonBureau,
+                isReturn: true
             ),
         ]
 

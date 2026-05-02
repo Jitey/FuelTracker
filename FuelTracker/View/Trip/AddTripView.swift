@@ -7,7 +7,6 @@ struct AddTripView: View {
     @Environment(\.modelContext) private var context
     @Environment(\.dismiss) private var dismiss
 
-    // Récupère le véhicule par défaut
     @Query private var vehicles: [Vehicle]
 
     // MARK: - Champs du formulaire
@@ -20,6 +19,13 @@ struct AddTripView: View {
     @State private var tollCost: String = ""
     @State private var note: String = ""
 
+    // MARK: - Route
+
+    @State private var selectedRoute: Route? = nil
+    @State private var isReturn: Bool = false
+    @State private var routeVariant: String = ""
+    @State private var showRoutePicker = false
+
     // MARK: - UI State
 
     @State private var showValidationError = false
@@ -30,7 +36,6 @@ struct AddTripView: View {
         vehicles.first(where: { $0.isDefault }) ?? vehicles.first
     }
 
-    /// Lookup RECHERCHEV-style : plein le plus récent antérieur à la date du trajet
     private func activeFillup(for date: Date) -> FuelFillup? {
         var descriptor = FetchDescriptor<FuelFillup>(
             predicate: #Predicate { $0.date <= date },
@@ -40,16 +45,12 @@ struct AddTripView: View {
         return try? context.fetch(descriptor).first
     }
 
-    /// Prix au litre : on prend le plein actif le plus récent antérieur au trajet.
-    /// Pour les longs trajets nécessitant plusieurs pleins (~1% des cas),
-    /// ce prix est approximatif. Une pondération multi-pleins est hors scope.
     private func applyFillupPrice(for date: Date) {
         guard fuelPricePerL.isEmpty else { return }
         if let fillup = activeFillup(for: date) {
             fuelPricePerL = String(format: "%.3f", fillup.pricePerLiter)
                 .replacingOccurrences(of: ".", with: ",")
         } else {
-            // Fallback sur le prix par défaut des Réglages
             let defaultPrice = UserDefaults.standard.double(forKey: "defaultFuelPrice")
             if defaultPrice > 0 {
                 fuelPricePerL = String(format: "%.3f", defaultPrice)
@@ -101,16 +102,57 @@ struct AddTripView: View {
                     DatePicker("Départ", selection: $departureDate, displayedComponents: [.date, .hourAndMinute])
                         .datePickerStyle(.compact)
                         .onChange(of: departureDate) {
-                            if arrivalDate < departureDate {
-                                arrivalDate = departureDate
-                            }
-                            // Recalcule le bon plein si la date change
+                            if arrivalDate < departureDate { arrivalDate = departureDate }
                             fuelPricePerL = ""
                             applyFillupPrice(for: departureDate)
                         }
-
                     DatePicker("Arrivée", selection: $arrivalDate, in: departureDate..., displayedComponents: [.date, .hourAndMinute])
                         .datePickerStyle(.compact)
+                }
+
+                // MARK: Route récurrente
+                Section {
+                    Button {
+                        showRoutePicker = true
+                    } label: {
+                        HStack {
+                            if let route = selectedRoute {
+                                RouteColorDot(colorName: route.colorName, size: 10)
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(isReturn ? route.returnLabel : route.label)
+                                        .font(.subheadline)
+                                        .foregroundStyle(.primary)
+                                    Text(isReturn ? "↙ Retour" : "↗ Aller")
+                                        .font(.caption)
+                                        .foregroundStyle(Color(route.colorName))
+                                }
+                            } else {
+                                Image(systemName: "arrow.triangle.swap")
+                                    .foregroundStyle(.secondary)
+                                Text("Aucune route")
+                                    .foregroundStyle(.secondary)
+                            }
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .font(.caption)
+                                .foregroundStyle(.tertiary)
+                        }
+                    }
+
+                    // Variante (visible seulement si une route est sélectionnée)
+                    if selectedRoute != nil {
+                        HStack {
+                            Text("Variante")
+                            Spacer()
+                            TextField("Ex: Autoroute, Nationale…", text: $routeVariant)
+                                .multilineTextAlignment(.trailing)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                } header: {
+                    Text("Route récurrente")
+                } footer: {
+                    Text("Optionnel — pour regrouper vos trajets habituels.")
                 }
 
                 // MARK: Trajet
@@ -121,20 +163,15 @@ struct AddTripView: View {
                         TextField("0", text: $distanceKm)
                             .keyboardType(.decimalPad)
                             .multilineTextAlignment(.trailing)
-                            .foregroundStyle(distanceKm.isEmpty ? .secondary : .primary)
-                        Text("km")
-                            .foregroundStyle(.secondary)
+                        Text("km").foregroundStyle(.secondary)
                     }
-
                     HStack {
                         Text("Consommation")
                         Spacer()
                         TextField("0,0", text: $consumptionL100)
                             .keyboardType(.decimalPad)
                             .multilineTextAlignment(.trailing)
-                            .foregroundStyle(consumptionL100.isEmpty ? .secondary : .primary)
-                        Text("L/100 km")
-                            .foregroundStyle(.secondary)
+                        Text("L/100 km").foregroundStyle(.secondary)
                     }
                 }
 
@@ -145,9 +182,7 @@ struct AddTripView: View {
                         TextField("0,000", text: $fuelPricePerL)
                             .keyboardType(.decimalPad)
                             .multilineTextAlignment(.trailing)
-                            .foregroundStyle(fuelPricePerL.isEmpty ? .secondary : .primary)
-                        Text("€/L")
-                            .foregroundStyle(.secondary)
+                        Text("€/L").foregroundStyle(.secondary)
                     }
                 } header: {
                     Text("Carburant")
@@ -157,7 +192,6 @@ struct AddTripView: View {
                     }
                 }
 
-                // MARK: Péage (optionnel)
                 Section {
                     HStack {
                         Text("Péage")
@@ -165,10 +199,8 @@ struct AddTripView: View {
                         TextField("Aucun", text: $tollCost)
                             .keyboardType(.decimalPad)
                             .multilineTextAlignment(.trailing)
-                            .foregroundStyle(tollCost.isEmpty ? .secondary : .primary)
                         if !tollCost.isEmpty {
-                            Text("€")
-                                .foregroundStyle(.secondary)
+                            Text("€").foregroundStyle(.secondary)
                         }
                     }
                 } header: {
@@ -177,28 +209,24 @@ struct AddTripView: View {
                     Text("Optionnel — laissez vide si pas de péage.")
                 }
 
-                // MARK: Note (optionnelle)
                 Section("Note") {
                     TextField("Ajouter une note…", text: $note, axis: .vertical)
                         .lineLimit(3, reservesSpace: false)
                 }
 
-                // MARK: Aperçu calculé
                 Section("Aperçu") {
                     HStack {
                         Text("Durée du trajet")
                         Spacer()
                         if let duration = tripDuration {
-                            Text(duration)
-                                .foregroundStyle(.secondary)
+                            Text(duration).foregroundStyle(.secondary)
                         }
                     }
                     if let volume = previewVolumeL, let cost = previewTotalCost {
                         HStack {
                             Text("Volume consommé")
                             Spacer()
-                            Text(String(format: "%.2f L", volume))
-                                .foregroundStyle(.secondary)
+                            Text(String(format: "%.2f L", volume)).foregroundStyle(.secondary)
                         }
                         HStack {
                             Text("Coût total estimé")
@@ -218,10 +246,7 @@ struct AddTripView: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Ajouter") {
-                        guard isFormValid else {
-                            showValidationError = true
-                            return
-                        }
+                        guard isFormValid else { showValidationError = true; return }
                         saveTrip()
                     }
                     .fontWeight(.semibold)
@@ -241,17 +266,18 @@ struct AddTripView: View {
             } message: {
                 Text("Vérifiez que la distance, la consommation et le prix au litre sont bien renseignés, et que l'heure d'arrivée est après le départ.")
             }
+            .sheet(isPresented: $showRoutePicker) {
+                RoutePickerView(selectedRoute: $selectedRoute, isReturn: $isReturn)
+            }
         }
         .onAppear {
-            // Récupère la date de départ depuis le widget si disponible
             if let pending = TripDraftStore.shared.pendingDepartureDate {
                 departureDate = pending
-                if arrivalDate < departureDate {
-                    arrivalDate = departureDate
-                }
+                if arrivalDate < departureDate { arrivalDate = departureDate }
             }
             applyFillupPrice(for: departureDate)
-        }    }
+        }
+    }
 
     // MARK: - Sauvegarde
 
@@ -262,14 +288,17 @@ struct AddTripView: View {
         let toll     = Double(tollCost.replacingOccurrences(of: ",", with: "."))
 
         let trip = Trip(
-            departureDate:    departureDate,
-            arrivalDate:      arrivalDate,
-            distanceKm:       distance,
-            consumptionL100:  conso,
-            fuelPricePerL:    price,
-            tollCost:         toll,
-            note:             note.isEmpty ? nil : note,
-            vehicle:          defaultVehicle
+            departureDate:   departureDate,
+            arrivalDate:     arrivalDate,
+            distanceKm:      distance,
+            consumptionL100: conso,
+            fuelPricePerL:   price,
+            tollCost:        toll,
+            note:            note.isEmpty ? nil : note,
+            vehicle:         defaultVehicle,
+            route:           selectedRoute,
+            isReturn:        isReturn,
+            routeVariant:    routeVariant.isEmpty ? nil : routeVariant
         )
 
         context.insert(trip)

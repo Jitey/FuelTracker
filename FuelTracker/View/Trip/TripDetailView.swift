@@ -20,10 +20,33 @@ struct TripDetailView: View {
                     Text("Coût total")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
+
+                    // Badge route sous le hero
+                    if let route = trip.route {
+                        RouteBadge(route: route, isReturn: trip.isReturn, variant: trip.routeVariant)
+                            .padding(.top, 4)
+                    }
                 }
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 24)
                 .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 18))
+
+                // Route récurrente (si assignée)
+                if let route = trip.route {
+                    InfoSection(title: "Route") {
+                        InfoRow(
+                            label: trip.isReturn ? "↙ Retour" : "↗ Aller",
+                            value: trip.isReturn ? route.returnLabel : route.label
+                        )
+                        if let variant = trip.routeVariant, !variant.isEmpty {
+                            InfoRow(label: "Variante", value: variant)
+                        }
+                        InfoRow(
+                            label: "Trajets sur cette route",
+                            value: "\(route.trips.count)"
+                        )
+                    }
+                }
 
                 // Infos principales
                 InfoSection(title: "Trajet") {

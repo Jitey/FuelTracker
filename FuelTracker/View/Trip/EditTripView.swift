@@ -19,6 +19,13 @@ struct EditTripView: View {
     @State private var tollCost: String
     @State private var note: String
 
+    // MARK: - Route
+
+    @State private var selectedRoute: Route?
+    @State private var isReturn: Bool
+    @State private var routeVariant: String
+    @State private var showRoutePicker = false
+
     // MARK: - UI State
 
     @State private var showValidationError = false
@@ -32,6 +39,9 @@ struct EditTripView: View {
         _fuelPricePerL   = State(initialValue: String(format: "%.3f", trip.fuelPricePerL).replacingOccurrences(of: ".", with: ","))
         _tollCost        = State(initialValue: trip.tollCost.map { String(format: "%.2f", $0).replacingOccurrences(of: ".", with: ",") } ?? "")
         _note            = State(initialValue: trip.note ?? "")
+        _selectedRoute   = State(initialValue: trip.route)
+        _isReturn        = State(initialValue: trip.isReturn)
+        _routeVariant    = State(initialValue: trip.routeVariant ?? "")
     }
 
     // MARK: - Computed
@@ -75,6 +85,50 @@ struct EditTripView: View {
                         .datePickerStyle(.compact)
                 }
 
+                // MARK: Route récurrente
+                Section {
+                    Button {
+                        showRoutePicker = true
+                    } label: {
+                        HStack {
+                            if let route = selectedRoute {
+                                RouteColorDot(colorName: route.colorName, size: 10)
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(isReturn ? route.returnLabel : route.label)
+                                        .font(.subheadline)
+                                        .foregroundStyle(.primary)
+                                    Text(isReturn ? "↙ Retour" : "↗ Aller")
+                                        .font(.caption)
+                                        .foregroundStyle(Color(route.colorName))
+                                }
+                            } else {
+                                Image(systemName: "arrow.triangle.swap")
+                                    .foregroundStyle(.secondary)
+                                Text("Aucune route")
+                                    .foregroundStyle(.secondary)
+                            }
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .font(.caption)
+                                .foregroundStyle(.tertiary)
+                        }
+                    }
+
+                    if selectedRoute != nil {
+                        HStack {
+                            Text("Variante")
+                            Spacer()
+                            TextField("Ex: Autoroute, Nationale…", text: $routeVariant)
+                                .multilineTextAlignment(.trailing)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                } header: {
+                    Text("Route récurrente")
+                } footer: {
+                    Text("Optionnel — pour regrouper vos trajets habituels.")
+                }
+
                 Section("Trajet") {
                     HStack {
                         Text("Distance")
@@ -82,8 +136,7 @@ struct EditTripView: View {
                         TextField("0", text: $distanceKm)
                             .keyboardType(.decimalPad)
                             .multilineTextAlignment(.trailing)
-                        Text("km")
-                            .foregroundStyle(.secondary)
+                        Text("km").foregroundStyle(.secondary)
                     }
                     HStack {
                         Text("Consommation")
@@ -91,8 +144,7 @@ struct EditTripView: View {
                         TextField("0,0", text: $consumptionL100)
                             .keyboardType(.decimalPad)
                             .multilineTextAlignment(.trailing)
-                        Text("L/100 km")
-                            .foregroundStyle(.secondary)
+                        Text("L/100 km").foregroundStyle(.secondary)
                     }
                 }
 
@@ -103,8 +155,7 @@ struct EditTripView: View {
                         TextField("0,000", text: $fuelPricePerL)
                             .keyboardType(.decimalPad)
                             .multilineTextAlignment(.trailing)
-                        Text("€/L")
-                            .foregroundStyle(.secondary)
+                        Text("€/L").foregroundStyle(.secondary)
                     }
                 }
 
@@ -116,8 +167,7 @@ struct EditTripView: View {
                             .keyboardType(.decimalPad)
                             .multilineTextAlignment(.trailing)
                         if !tollCost.isEmpty {
-                            Text("€")
-                                .foregroundStyle(.secondary)
+                            Text("€").foregroundStyle(.secondary)
                         }
                     }
                 } header: {
@@ -136,8 +186,7 @@ struct EditTripView: View {
                         HStack {
                             Text("Volume consommé")
                             Spacer()
-                            Text(String(format: "%.2f L", volume))
-                                .foregroundStyle(.secondary)
+                            Text(String(format: "%.2f L", volume)).foregroundStyle(.secondary)
                         }
                         HStack {
                             Text("Coût total")
@@ -157,10 +206,7 @@ struct EditTripView: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Enregistrer") {
-                        guard isFormValid else {
-                            showValidationError = true
-                            return
-                        }
+                        guard isFormValid else { showValidationError = true; return }
                         saveTrip()
                     }
                     .fontWeight(.semibold)
@@ -180,6 +226,9 @@ struct EditTripView: View {
             } message: {
                 Text("Vérifiez que la distance, la consommation et le prix au litre sont bien renseignés.")
             }
+            .sheet(isPresented: $showRoutePicker) {
+                RoutePickerView(selectedRoute: $selectedRoute, isReturn: $isReturn)
+            }
         }
     }
 
@@ -193,6 +242,9 @@ struct EditTripView: View {
         trip.fuelPricePerL   = Double(fuelPricePerL.replacingOccurrences(of: ",", with: "."))!
         trip.tollCost        = Double(tollCost.replacingOccurrences(of: ",", with: "."))
         trip.note            = note.isEmpty ? nil : note
+        trip.route           = selectedRoute
+        trip.isReturn        = isReturn
+        trip.routeVariant    = routeVariant.isEmpty ? nil : routeVariant
         try? context.save()
         dismiss()
     }

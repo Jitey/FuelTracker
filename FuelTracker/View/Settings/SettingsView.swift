@@ -5,6 +5,7 @@ import UniformTypeIdentifiers
 struct SettingsView: View {
 
     @Query private var vehicles: [Vehicle]
+    @Query private var routes: [Route]
     @Query(sort: \FuelFillup.date, order: .reverse) private var fillups: [FuelFillup]
     @Query(sort: \Trip.departureDate, order: .reverse) private var trips: [Trip]
     @Environment(\.modelContext) private var context
@@ -41,6 +42,22 @@ struct SettingsView: View {
                             .foregroundStyle(.secondary)
                             .onSubmit { saveVehicleName() }
                     }
+                }
+
+                // MARK: Routes récurrentes
+                Section {
+                    NavigationLink(destination: RouteManagerView()) {
+                        HStack {
+                            Label("Mes routes", systemImage: "arrow.triangle.swap")
+                            Spacer()
+                            Text("\(routes.count)")
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                } header: {
+                    Text("Routes récurrentes")
+                } footer: {
+                    Text("Regroupez vos trajets habituels par paire départ/arrivée.")
                 }
 
                 // MARK: Carburant
@@ -291,7 +308,7 @@ struct SettingsView: View {
         return url
     }
 
-        // MARK: - Helpers
+    // MARK: - Helpers
 
     private var appVersion: String {
         let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "—"

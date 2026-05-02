@@ -14,6 +14,17 @@ final class Trip: Hashable {
     var note: String?
     var vehicle: Vehicle?
 
+    // MARK: - Route récurrente (optionnel)
+
+    /// Route récurrente associée (ex: Maison → Bureau)
+    var route: Route?
+
+    /// true = retour (Destination → Origine), false = aller (Origine → Destination)
+    var isReturn: Bool
+
+    /// Variante d'itinéraire libre (ex: "Autoroute", "Nationale", "Via centre-ville")
+    var routeVariant: String?
+
     // MARK: - Propriétés calculées (non persistées)
 
     /// Volume consommé en litres : distanceKm × consumptionL100 / 100
@@ -49,6 +60,12 @@ final class Trip: Hashable {
         }
     }
 
+    /// Libellé du sens du trajet pour affichage
+    var directionLabel: String? {
+        guard let route else { return nil }
+        return isReturn ? route.returnLabel : route.label
+    }
+
     init(
         departureDate: Date,
         arrivalDate: Date,
@@ -57,7 +74,10 @@ final class Trip: Hashable {
         fuelPricePerL: Double,
         tollCost: Double? = nil,
         note: String? = nil,
-        vehicle: Vehicle? = nil
+        vehicle: Vehicle? = nil,
+        route: Route? = nil,
+        isReturn: Bool = false,
+        routeVariant: String? = nil
     ) {
         self.id = UUID()
         self.departureDate = departureDate
@@ -68,5 +88,8 @@ final class Trip: Hashable {
         self.tollCost = tollCost
         self.note = note
         self.vehicle = vehicle
+        self.route = route
+        self.isReturn = isReturn
+        self.routeVariant = routeVariant
     }
 }
