@@ -1,28 +1,60 @@
 import SwiftUI
 import SwiftData
 
+enum GroupingPeriod: String, CaseIterable, Identifiable {
+    case day = "Jour"
+    case week = "Semaine"
+    case month = "Mois"
+    case year = "Année"
+    case all = "Tout"
+    var id: Self { self }
+}
+
 struct TripListView: View {
 
     @Query(sort: \Trip.departureDate, order: .reverse) private var trips: [Trip]
     @State private var showAddTrip = false
+    @State private var groupingPeriod: GroupingPeriod = .month
+    @State private var tripToEdit: Trip? = nil  // ← remonté ici
 
-    private var tripsByMonth: [(month: Date, trips: [Trip])] {
+    private var tripsByPeriod: [(period: Date, trips: [Trip])] {
         let calendar = Calendar.current
-        let grouped = Dictionary(grouping: trips) { trip in
-            calendar.startOfMonth(for: trip.departureDate)
+        switch groupingPeriod {
+        case .day:
+            let grouped = Dictionary(grouping: trips) { trip in
+                calendar.startOfDay(for: trip.departureDate)
+            }
+            return grouped.map { (period: $0.key, trips: $0.value) }.sorted { $0.period > $1.period }
+        case .week:
+            let grouped = Dictionary(grouping: trips) { trip in
+                calendar.date(from: calendar.dateComponents([.yearForWeekOfYear, .weekOfYear], from: trip.departureDate)) ?? trip.departureDate
+            }
+            return grouped.map { (period: $0.key, trips: $0.value) }.sorted { $0.period > $1.period }
+        case .month:
+            let grouped = Dictionary(grouping: trips) { trip in
+                calendar.startOfMonth(for: trip.departureDate)
+            }
+            return grouped.map { (period: $0.key, trips: $0.value) }.sorted { $0.period > $1.period }
+        case .year:
+            let grouped = Dictionary(grouping: trips) { trip in
+                let comps = calendar.dateComponents([.year], from: trip.departureDate)
+                return calendar.date(from: comps) ?? trip.departureDate
+            }
+            return grouped.map { (period: $0.key, trips: $0.value) }.sorted { $0.period > $1.period }
+        case .all:
+            return trips.isEmpty ? [] : [(period: Date.distantPast, trips: trips)]
         }
-        return grouped
-            .map { (month: $0.key, trips: $0.value) }
-            .sorted { $0.month > $1.month }
     }
 
     var body: some View {
         NavigationStack {
             List {
-                ForEach(tripsByMonth, id: \.month) { section in
-                    MonthSectionView(
-                        month: section.month,
-                        trips: section.trips
+                ForEach(tripsByPeriod, id: \.period) { section in
+                    PeriodSectionView(
+                        period: section.period,
+                        trips: section.trips,
+                        grouping: groupingPeriod,
+                        tripToEdit: $tripToEdit  // ← binding passé en bas
                     )
                 }
             }
@@ -32,6 +64,14 @@ struct TripListView: View {
                 TripDetailView(trip: trip)
             }
             .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Picker("Période", selection: $groupingPeriod) {
+                        ForEach(GroupingPeriod.allCases) { period in
+                            Text(period.rawValue).tag(period)
+                        }
+                    }
+                    .pickerStyle(.menu)
+                }
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button {
                         showAddTrip = true
@@ -44,21 +84,43 @@ struct TripListView: View {
             .sheet(isPresented: $showAddTrip) {
                 AddTripView()
             }
+            // ← sheet géré ici sur la vue stable
+            .sheet(item: $tripToEdit) { trip in
+                EditTripView(trip: trip)
+            }
         }
     }
 }
 
-// MARK: - Section mensuelle
+// MARK: - Section périodique
 // Note: les items du ForEach sont exposés directement à la List parente
 // via @ViewBuilder pour que .swipeActions fonctionne correctement.
 
-struct MonthSectionView: View {
-    let month: Date
+struct PeriodSectionView: View {
+    let period: Date
     let trips: [Trip]
+    let grouping: GroupingPeriod
+    @Binding var tripToEdit: Trip?  // ← binding au lieu de @State local
+
     @Environment(\.modelContext) private var context
-    @State private var tripToEdit: Trip? = nil
 
     private var stats: MonthStats { MonthStats(trips: trips) }
+
+    private var headerText: String {
+        switch grouping {
+        case .day:
+            return period.formatted(.dateTime.day().month().year())
+        case .week:
+            return "Semaine " + period.formatted(.dateTime.week())
+//            return "Semaine du " + period.formatted(.dateTime.day().month().year())
+        case .month:
+            return period.formatted(.dateTime.month(.wide).year())
+        case .year:
+            return period.formatted(.dateTime.year())
+        case .all:
+            return "Tous les trajets"
+        }
+    }
 
     var body: some View {
         Section {
@@ -89,7 +151,7 @@ struct MonthSectionView: View {
             }
         } header: {
             VStack(alignment: .leading, spacing: 2) {
-                Text(month.formatted(.dateTime.month(.wide).year()))
+                Text(headerText)
                     .font(.headline)
                     .foregroundStyle(.primary)
                 Text("\(stats.tripCount) trajets · \(Int(stats.totalDistance)) km · \(stats.totalCost.formatted(.currency(code: "EUR")))")
@@ -100,9 +162,7 @@ struct MonthSectionView: View {
             .padding(.leading, 16)
             .padding(.vertical, 4)
         }
-        .sheet(item: $tripToEdit) { trip in
-            EditTripView(trip: trip)
-        }
+        // ← .sheet supprimé d'ici
     }
 }
 

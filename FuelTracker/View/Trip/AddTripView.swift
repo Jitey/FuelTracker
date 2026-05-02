@@ -81,6 +81,15 @@ struct AddTripView: View {
         arrivalDate >= departureDate
     }
 
+    private var tripDuration: String? {
+        let duration = arrivalDate.timeIntervalSince(departureDate)
+        guard duration > 0 else { return nil }
+        let formatter = DateComponentsFormatter()
+        formatter.allowedUnits = [.hour, .minute]
+        formatter.unitsStyle = .short
+        return formatter.string(from: duration)
+    }
+
     // MARK: - Body
 
     var body: some View {
@@ -175,8 +184,16 @@ struct AddTripView: View {
                 }
 
                 // MARK: Aperçu calculé
-                if let volume = previewVolumeL, let cost = previewTotalCost {
-                    Section("Aperçu") {
+                Section("Aperçu") {
+                    HStack {
+                        Text("Durée du trajet")
+                        Spacer()
+                        if let duration = tripDuration {
+                            Text(duration)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    if let volume = previewVolumeL, let cost = previewTotalCost {
                         HStack {
                             Text("Volume consommé")
                             Spacer()
