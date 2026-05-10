@@ -139,7 +139,7 @@ enum SampleData {
         let trips = try! context.fetch(FetchDescriptor<Trip>(
             sortBy: [SortDescriptor(\Trip.departureDate, order: .reverse)]
         ))
-        return trips.first!
+        return trips.first(where: { $0.tollCost == nil })!
     }
 
     @MainActor
