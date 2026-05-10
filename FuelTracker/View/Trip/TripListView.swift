@@ -60,37 +60,35 @@ struct TripListView: View {
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 0) {
-
-                // MARK: Filtre route (si au moins une route existe)
-                if !routes.isEmpty {
-                    RouteFilterBar(routes: routes, selectedRoute: $selectedRoute)
+            List {
+                ForEach(tripsByPeriod, id: \.period) { section in
+                    PeriodSectionView(
+                        period: section.period,
+                        trips: section.trips,
+                        grouping: groupingPeriod,
+                        tripToEdit: $tripToEdit
+                    )
                 }
-
-                List {
-                    ForEach(tripsByPeriod, id: \.period) { section in
-                        PeriodSectionView(
-                            period: section.period,
-                            trips: section.trips,
-                            grouping: groupingPeriod,
-                            tripToEdit: $tripToEdit
-                        )
-                    }
-                }
-                .listStyle(.plain)
             }
+            .listStyle(.plain)
             .navigationTitle("Mes trajets")
             .navigationDestination(for: Trip.self) { trip in
                 TripDetailView(trip: trip)
             }
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Picker("Période", selection: $groupingPeriod) {
-                        ForEach(GroupingPeriod.allCases) { period in
-                            Text(period.rawValue).tag(period)
+                    HStack(spacing: 8) {
+                        Picker("Période", selection: $groupingPeriod) {
+                            ForEach(GroupingPeriod.allCases) { period in
+                                Text(period.rawValue).tag(period)
+                            }
+                        }
+                        .pickerStyle(.menu)
+
+                        if !routes.isEmpty {
+                            RouteFilterButton(routes: routes, selectedRoute: $selectedRoute)
                         }
                     }
-                    .pickerStyle(.menu)
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button {
@@ -111,83 +109,67 @@ struct TripListView: View {
     }
 }
 
-// MARK: - Barre de filtre par route
+// MARK: - Bouton filtre route (toolbar)
 
-struct RouteFilterBar: View {
+struct RouteFilterButton: View {
     let routes: [Route]
     @Binding var selectedRoute: Route?
 
-    var body: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
-                FilterChip(
-                    label: "Tous",
-                    colorName: nil,
-                    isSelected: selectedRoute == nil
-                ) {
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                        selectedRoute = nil
-                    }
-                }
+    private var isActive: Bool { selectedRoute != nil }
 
-                ForEach(routes) { route in
-                    FilterChip(
-                        label: route.origin + " ↔ " + route.destination,
-                        colorName: route.colorName,
-                        isSelected: selectedRoute?.id == route.id
-                    ) {
-                        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                            selectedRoute = selectedRoute?.id == route.id ? nil : route
-                        }
-                    }
-                }
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 10)
-            // L'animation sur le HStack lui-même fait glisser les chips
-            .animation(.spring(response: 0.3, dampingFraction: 0.7), value: selectedRoute?.id)
+    private var activeColor: Color {
+        guard let r = selectedRoute else { return .accentColor }
+        switch r.colorName {
+        case "blue":   return .blue
+        case "indigo": return .indigo
+        case "purple": return .purple
+        case "pink":   return .pink
+        case "red":    return .red
+        case "orange": return .orange
+        case "yellow": return .yellow
+        case "green":  return .green
+        case "mint":   return .mint
+        default:       return .teal
         }
-        .background(.bar)
-        .overlay(alignment: .bottom) {
+    }
+
+    var body: some View {
+        Menu {
+            // Toutes les routes
+            Button {
+                withAnimation { selectedRoute = nil }
+            } label: {
+                Label("Tous les trajets", systemImage: selectedRoute == nil ? "checkmark" : "list.bullet")
+            }
+
             Divider()
-        }
-    }
-}
 
-private struct FilterChip: View {
-    let label: String
-    let colorName: String?
-    let isSelected: Bool
-    let action: () -> Void
-
-    var chipColor: Color {
-        colorName.map { RouteColor.color(for: $0) } ?? .teal
-    }
-
-    var body: some View {
-        Button(action: action) {
-            HStack(spacing: 5) {
-                if let colorName {
-                    RouteColorDot(colorName: colorName, size: 8)
+            ForEach(routes) { route in
+                Button {
+                    withAnimation { selectedRoute = route }
+                } label: {
+                    // Checkmark si route active
+                    if selectedRoute?.id == route.id {
+                        Label(route.origin + " ↔ " + route.destination, systemImage: "checkmark")
+                    } else {
+                        Text(route.origin + " ↔ " + route.destination)
+                    }
                 }
-                Text(label)
-                    .font(.caption)
-                    .fontWeight(isSelected ? .semibold : .regular)
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 6)
-            .background(
-                isSelected ? chipColor.opacity(0.15) : Color(.systemFill),
-                in: Capsule()
-            )
-            .overlay(
-                Capsule()
-                    .strokeBorder(isSelected ? chipColor : Color.clear, lineWidth: 1.5)
-            )
-            .foregroundStyle(isSelected ? chipColor : .secondary)
+        } label: {
+            HStack(spacing: 4) {
+                Image(systemName: isActive ? "line.3.horizontal.decrease.circle.fill" : "line.3.horizontal.decrease.circle")
+                    .foregroundStyle(isActive ? activeColor : .secondary)
+                if let route = selectedRoute {
+                    Text(route.origin + " ↔ " + route.destination)
+                        .font(.caption)
+                        .fontWeight(.medium)
+                        .foregroundStyle(activeColor)
+                        .lineLimit(1)
+                }
+            }
+            .animation(.easeInOut(duration: 0.2), value: isActive)
         }
-        .buttonStyle(.plain)
-        .animation(.easeInOut(duration: 0.15), value: isSelected)
     }
 }
 
