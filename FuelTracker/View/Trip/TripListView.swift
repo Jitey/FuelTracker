@@ -166,9 +166,11 @@ struct RouteFilterButton: View {
                         .fontWeight(.medium)
                         .foregroundStyle(activeColor)
                         .lineLimit(1)
+                        .transition(.opacity.combined(with: .scale(scale: 0.85, anchor: .leading)))
                 }
             }
-            .animation(.easeInOut(duration: 0.2), value: isActive)
+            .fixedSize()
+            .animation(.easeInOut(duration: 0.2), value: selectedRoute?.id)
         }
     }
 }
