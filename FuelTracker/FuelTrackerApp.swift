@@ -8,7 +8,16 @@ struct FuelTrackerApp: App {
 
     init() {
         do {
-            container = try ModelContainer(for: Vehicle.self, Trip.self, FuelFillup.self, Route.self)
+            // SwiftData gère automatiquement l'ajout de nouveaux modèles
+            // sans plan de migration explicite (lightweight migration)
+            let schema = Schema([
+                Vehicle.self,
+                Trip.self,
+                FuelFillup.self,
+                Route.self
+            ])
+            let config = ModelConfiguration(schema: schema)
+            container = try ModelContainer(for: schema, configurations: config)
             createDefaultVehicleIfNeeded()
         } catch {
             fatalError("Impossible de créer le ModelContainer : \(error)")
@@ -24,7 +33,6 @@ struct FuelTrackerApp: App {
 
     // MARK: - Véhicule par défaut
 
-    /// Crée un véhicule par défaut au premier lancement si aucun n'existe
     private func createDefaultVehicleIfNeeded() {
         let context = container.mainContext
         let descriptor = FetchDescriptor<Vehicle>()

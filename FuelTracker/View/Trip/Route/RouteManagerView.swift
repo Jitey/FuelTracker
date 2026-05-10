@@ -284,7 +284,7 @@ struct ColorSwatch: View {
         Button(action: action) {
             ZStack {
                 Circle()
-                    .fill(Color(colorName))
+                    .fill(RouteColor.color(for: colorName))
                     .frame(width: 36, height: 36)
                 if isSelected {
                     Circle()
@@ -306,11 +306,12 @@ struct RoutePreviewRow: View {
     let colorName: String
 
     var body: some View {
+        let color = RouteColor.color(for: colorName)
         HStack(spacing: 8) {
             RouteColorDot(colorName: colorName, size: 10)
             Text("↗")
                 .font(.caption)
-                .foregroundStyle(Color(colorName))
+                .foregroundStyle(color)
             Text("\(origin) → \(destination)")
                 .font(.subheadline)
             Spacer()
@@ -321,7 +322,7 @@ struct RoutePreviewRow: View {
             RouteColorDot(colorName: colorName, size: 10)
             Text("↙")
                 .font(.caption)
-                .foregroundStyle(Color(colorName))
+                .foregroundStyle(color)
             Text("\(destination) → \(origin)")
                 .font(.subheadline)
             Spacer()

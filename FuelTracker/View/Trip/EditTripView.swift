@@ -99,7 +99,7 @@ struct EditTripView: View {
                                         .foregroundStyle(.primary)
                                     Text(isReturn ? "↙ Retour" : "↗ Aller")
                                         .font(.caption)
-                                        .foregroundStyle(Color(route.colorName))
+                                        .foregroundStyle(RouteColor.color(for: route.colorName))
                                 }
                             } else {
                                 Image(systemName: "arrow.triangle.swap")

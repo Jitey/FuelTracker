@@ -20,10 +20,10 @@ final class Trip: Hashable {
     var route: Route?
 
     /// true = retour (Destination → Origine), false = aller (Origine → Destination)
-    var isReturn: Bool
+    var isReturn: Bool = false
 
     /// Variante d'itinéraire libre (ex: "Autoroute", "Nationale", "Via centre-ville")
-    var routeVariant: String?
+    var routeVariant: String? = nil
 
     // MARK: - Propriétés calculées (non persistées)
 

@@ -1,4 +1,5 @@
 import Foundation
+import SwiftUI
 import SwiftData
 
 // MARK: - Couleurs disponibles pour les routes
@@ -17,7 +18,25 @@ enum RouteColor: String, CaseIterable, Codable {
 
     var displayName: String { rawValue.capitalized }
 
-    var swiftUIColor: String { rawValue }
+    var color: Color {
+        switch self {
+        case .teal:   return .teal
+        case .blue:   return .blue
+        case .indigo: return .indigo
+        case .purple: return .purple
+        case .pink:   return .pink
+        case .red:    return .red
+        case .orange: return .orange
+        case .yellow: return .yellow
+        case .green:  return .green
+        case .mint:   return .mint
+        }
+    }
+
+    /// Résout un colorName stocké en base → Color SwiftUI
+    static func color(for name: String) -> Color {
+        RouteColor(rawValue: name)?.color ?? .teal
+    }
 }
 
 // MARK: - Modèle Route

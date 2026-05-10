@@ -136,6 +136,8 @@ private struct DirectionButton: View {
     let color: String
     let action: () -> Void
 
+    private var resolvedColor: Color { RouteColor.color(for: color) }
+
     var body: some View {
         Button(action: action) {
             VStack(alignment: .leading, spacing: 2) {
@@ -152,18 +154,18 @@ private struct DirectionButton: View {
             .padding(.vertical, 7)
             .background(
                 isSelected
-                    ? Color(color).opacity(0.15)
+                    ? resolvedColor.opacity(0.15)
                     : Color(.systemFill),
                 in: RoundedRectangle(cornerRadius: 8)
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 8)
                     .strokeBorder(
-                        isSelected ? Color(color) : Color.clear,
+                        isSelected ? resolvedColor : Color.clear,
                         lineWidth: 1.5
                     )
             )
-            .foregroundStyle(isSelected ? Color(color) : .primary)
+            .foregroundStyle(isSelected ? resolvedColor : .primary)
         }
         .buttonStyle(.plain)
     }
@@ -175,9 +177,24 @@ struct RouteColorDot: View {
     let colorName: String
     var size: CGFloat = 12
 
+    private var color: Color {
+        switch colorName {
+        case "blue":   return .blue
+        case "indigo": return .indigo
+        case "purple": return .purple
+        case "pink":   return .pink
+        case "red":    return .red
+        case "orange": return .orange
+        case "yellow": return .yellow
+        case "green":  return .green
+        case "mint":   return .mint
+        default:       return .teal
+        }
+    }
+
     var body: some View {
         Circle()
-            .fill(Color(colorName))
+            .fill(color)
             .frame(width: size, height: size)
     }
 }

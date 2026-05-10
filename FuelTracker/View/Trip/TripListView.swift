@@ -120,13 +120,14 @@ struct RouteFilterBar: View {
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
-                // Chip "Tous"
                 FilterChip(
                     label: "Tous",
                     colorName: nil,
                     isSelected: selectedRoute == nil
                 ) {
-                    selectedRoute = nil
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                        selectedRoute = nil
+                    }
                 }
 
                 ForEach(routes) { route in
@@ -135,12 +136,16 @@ struct RouteFilterBar: View {
                         colorName: route.colorName,
                         isSelected: selectedRoute?.id == route.id
                     ) {
-                        selectedRoute = selectedRoute?.id == route.id ? nil : route
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                            selectedRoute = selectedRoute?.id == route.id ? nil : route
+                        }
                     }
                 }
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 10)
+            // L'animation sur le HStack lui-même fait glisser les chips
+            .animation(.spring(response: 0.3, dampingFraction: 0.7), value: selectedRoute?.id)
         }
         .background(.bar)
         .overlay(alignment: .bottom) {
@@ -156,7 +161,7 @@ private struct FilterChip: View {
     let action: () -> Void
 
     var chipColor: Color {
-        colorName.map { Color($0) } ?? .teal
+        colorName.map { RouteColor.color(for: $0) } ?? .teal
     }
 
     var body: some View {
